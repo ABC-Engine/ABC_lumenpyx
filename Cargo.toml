@@ -1,0 +1,14 @@
+workspace = { members = ["examples/render_sprite"] }
+
+[package]
+name = "ABC_lumenpyx"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+#lumenpyx = { git = "https://github.com/ABC-Engine/lumenpyx" }
+# REPLACE BEFORE PUBLISHING
+lumenpyx = {path = "G:/graphics programming/opengl_test/lumenpyx"}
+ABC_Game_Engine = { git = "https://github.com/ABC-Engine/ABC-Game-Engine"}
