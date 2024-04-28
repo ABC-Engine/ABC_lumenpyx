@@ -1,4 +1,4 @@
-workspace = { members = ["examples/render_sprite"] }
+workspace = { members = [ "examples/minimal_input_example","examples/render_sprite"] }
 
 [package]
 name = "ABC_lumenpyx"
@@ -12,3 +12,4 @@ edition = "2021"
 # REPLACE BEFORE PUBLISHING
 lumenpyx = {path = "G:/graphics programming/opengl_test/lumenpyx"}
 ABC_Game_Engine = { git = "https://github.com/ABC-Engine/ABC-Game-Engine"}
+glium = "0.34.0"

@@ -1,17 +1,23 @@
 //! The official ABC Game Engine implementation of lumenpyx
 
-use lumenpyx::animation::Animation;
-use lumenpyx::drawable_object::Drawable;
-use lumenpyx::lights::{AreaLight, PointLight};
-use lumenpyx::primitives::{Circle, Rectangle, Sprite};
-use lumenpyx::primitives::{Cylinder, Sphere};
+//use lumenpyx::animation::Animation;
+mod drawables;
 //pub use lumenpyx::*;
-use lumenpyx::lights::DirectionalLight;
-use lumenpyx::lights::LightDrawable;
-pub use lumenpyx::*;
+use drawables::lights::{AreaLight, DirectionalLight, PointLight};
+use drawables::primitives::{Animation, Circle, Cylinder, Rectangle, Sphere, Sprite};
+pub use drawables::*;
+use lumenpyx::draw_all;
 use ABC_Game_Engine::EntitiesAndComponents;
 use ABC_Game_Engine::Entity;
 use ABC_Game_Engine::{self};
+
+// pub use everything from lumenpyx but exclude the things we override in drawables
+pub use lumenpyx::drawable_object::Drawable;
+pub use lumenpyx::lights::LightDrawable;
+pub use lumenpyx::primitives::Normal;
+pub use lumenpyx::primitives::Texture;
+pub use lumenpyx::LumenpyxProgram;
+pub use lumenpyx::Transform;
 
 #[derive(Clone, Copy)]
 pub struct Camera {
@@ -20,9 +26,9 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new(position: [f32; 3]) -> Self {
+    pub fn new() -> Self {
         Self {
-            lumen_camera: lumenpyx::Camera::new(position),
+            lumen_camera: lumenpyx::Camera::new([0.0, 0.0, 0.0]), // should be set by the transform in the ecs
             is_active: true,
         }
     }
