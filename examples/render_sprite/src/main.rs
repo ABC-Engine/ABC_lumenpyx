@@ -2,8 +2,8 @@ use ABC_Game_Engine::DeltaTime;
 use ABC_Game_Engine::Input;
 use ABC_Game_Engine::Scene;
 use ABC_Game_Engine::Transform;
-use ABC_Game_Engine::Vk;
 use ABC_Game_Engine::{EntitiesAndComponents, System};
+use ABC_Game_Engine::{KeyCode, KeyState};
 use ABC_lumenpyx::lights;
 use ABC_lumenpyx::primitives::Circle;
 use ABC_lumenpyx::LumenpyxProgram;
@@ -37,21 +37,17 @@ impl System for CircleMovementSystem {
                 .unwrap()
                 .delta_time;
 
-            if input.is_key_pressed(Vk::Escape) {
-                std::process::exit(0);
-            }
-            if input.is_key_pressed(Vk::W) {
+            if input.get_key_state(KeyCode::W) == KeyState::Pressed {
                 movement_dir[1] += 1.0;
-                println!("W");
-            } else if input.is_key_pressed(Vk::S) {
+            }
+            if input.get_key_state(KeyCode::S) == KeyState::Pressed {
                 movement_dir[1] += -1.0;
-                println!("S");
-            } else if input.is_key_pressed(Vk::A) {
+            }
+            if input.get_key_state(KeyCode::A) == KeyState::Pressed {
                 movement_dir[0] += -1.0;
-                println!("A");
-            } else if input.is_key_pressed(Vk::D) {
+            }
+            if input.get_key_state(KeyCode::D) == KeyState::Pressed {
                 movement_dir[0] += 1.0;
-                println!("D");
             }
 
             let magnitude = (movement_dir[0].powi(2) + movement_dir[1].powi(2)).sqrt();
@@ -105,9 +101,16 @@ fn main() {
     //scene.world.add_system(CameraMovementSystem);
     scene.world.add_system(CircleMovementSystem);
 
+    let entities_and_components_ptr =
+        (&mut scene.world.entities_and_components) as *mut EntitiesAndComponents;
+
     // this is to run the program for forever or until returned
-    lumen_program.run(event_loop, |program| {
-        scene.world.run();
-        render(&mut scene.world.entities_and_components, program);
-    });
+    lumen_program.run(
+        event_loop,
+        unsafe { &mut *entities_and_components_ptr },
+        |program| {
+            scene.world.run();
+            render(&mut scene.world.entities_and_components, program);
+        },
+    );
 }

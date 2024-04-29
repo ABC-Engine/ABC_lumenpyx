@@ -2,22 +2,260 @@
 
 //use lumenpyx::animation::Animation;
 mod drawables;
+use std::collections::HashSet;
+use std::ops::{Deref, DerefMut};
+
 //pub use lumenpyx::*;
 use drawables::lights::{AreaLight, DirectionalLight, PointLight};
 use drawables::primitives::{Animation, Circle, Cylinder, Rectangle, Sphere, Sprite};
 pub use drawables::*;
 use lumenpyx::draw_all;
-use ABC_Game_Engine::EntitiesAndComponents;
-use ABC_Game_Engine::Entity;
 use ABC_Game_Engine::{self};
+use ABC_Game_Engine::{EntitiesAndComponents, Input};
+use ABC_Game_Engine::{Entity, KeyCode};
+
+use winit::event::WindowEvent;
+use winit::event_loop::EventLoop;
 
 // pub use everything from lumenpyx but exclude the things we override in drawables
 pub use lumenpyx::drawable_object::Drawable;
 pub use lumenpyx::lights::LightDrawable;
 pub use lumenpyx::primitives::Normal;
 pub use lumenpyx::primitives::Texture;
-pub use lumenpyx::LumenpyxProgram;
 pub use lumenpyx::Transform;
+
+pub struct LumenpyxProgram {
+    pub program: lumenpyx::LumenpyxProgram,
+    keys_down: HashSet<KeyCode>,
+}
+
+impl LumenpyxProgram {
+    pub fn new(resolution: [u32; 2], name: &str) -> (Self, EventLoop<()>) {
+        let (program, event_loop) = lumenpyx::LumenpyxProgram::new(resolution, name);
+        let keys_down = HashSet::new();
+
+        (Self { program, keys_down }, event_loop)
+    }
+
+    /// run the program with the given update function
+    pub fn run<F>(
+        &mut self,
+        event_loop: EventLoop<()>,
+        entities_and_components: &mut EntitiesAndComponents,
+        mut update: F,
+    ) where
+        F: FnMut(&mut Self),
+    {
+        event_loop
+            .run(move |ev, window_target| match ev {
+                winit::event::Event::WindowEvent { event, .. } => match event {
+                    winit::event::WindowEvent::CloseRequested => {
+                        window_target.exit();
+                    }
+                    winit::event::WindowEvent::Resized(physical_size) => {
+                        self.display.resize(physical_size.into());
+                    }
+                    winit::event::WindowEvent::RedrawRequested => {
+                        {
+                            let input = entities_and_components
+                                .get_resource_mut::<Input>()
+                                .expect("failed to get input system");
+
+                            input.clear_key_states();
+                            for key in self.keys_down.iter() {
+                                input.set_key_state(*key);
+                            }
+                            input.advance_frame();
+                        }
+                        update(self);
+                    }
+                    winit::event::WindowEvent::KeyboardInput { event, .. } => {
+                        if event.state == winit::event::ElementState::Pressed {
+                            // turn the key event into a key enum in winit
+                            match event.physical_key {
+                                winit::keyboard::PhysicalKey::Code(code) => {
+                                    let key = winit_input_to_abc_input(code);
+                                    if let Some(key) = key {
+                                        self.keys_down.insert(key);
+                                    }
+                                }
+                                // maybe we should log something here, once we have a logger...
+                                // for now, we just ignore it.
+                                winit::keyboard::PhysicalKey::Unidentified(_) => (),
+                            }
+                        } else if event.state == winit::event::ElementState::Released {
+                            // turn the key event into a key enum in winit
+                            match event.physical_key {
+                                winit::keyboard::PhysicalKey::Code(code) => {
+                                    let key = winit_input_to_abc_input(code);
+                                    if let Some(key) = key {
+                                        self.keys_down.remove(&key);
+                                    }
+                                }
+                                // maybe we should log something here, once we have a logger...
+                                // for now, we just ignore it.
+                                winit::keyboard::PhysicalKey::Unidentified(_) => (),
+                            }
+                        }
+                    }
+                    _ => (),
+                },
+                winit::event::Event::AboutToWait => {
+                    // RedrawRequested will only when we resize the window, so we need to manually
+                    // request it.
+                    self.window.request_redraw();
+                }
+                _ => (),
+            })
+            .expect("Failed to run event loop");
+    }
+}
+
+impl Deref for LumenpyxProgram {
+    type Target = lumenpyx::LumenpyxProgram;
+
+    fn deref(&self) -> &Self::Target {
+        &self.program
+    }
+}
+
+impl DerefMut for LumenpyxProgram {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.program
+    }
+}
+
+fn winit_input_to_abc_input(
+    input: winit::keyboard::KeyCode,
+) -> Option<ABC_Game_Engine::input::KeyCode> {
+    // convert the key event to just the key
+    match input {
+        winit::keyboard::KeyCode::Digit0 => Some(ABC_Game_Engine::input::KeyCode::Key0),
+        winit::keyboard::KeyCode::Digit1 => Some(ABC_Game_Engine::input::KeyCode::Key1),
+        winit::keyboard::KeyCode::Digit2 => Some(ABC_Game_Engine::input::KeyCode::Key2),
+        winit::keyboard::KeyCode::Digit3 => Some(ABC_Game_Engine::input::KeyCode::Key3),
+        winit::keyboard::KeyCode::Digit4 => Some(ABC_Game_Engine::input::KeyCode::Key4),
+        winit::keyboard::KeyCode::Digit5 => Some(ABC_Game_Engine::input::KeyCode::Key5),
+        winit::keyboard::KeyCode::Digit6 => Some(ABC_Game_Engine::input::KeyCode::Key6),
+        winit::keyboard::KeyCode::Digit7 => Some(ABC_Game_Engine::input::KeyCode::Key7),
+        winit::keyboard::KeyCode::Digit8 => Some(ABC_Game_Engine::input::KeyCode::Key8),
+        winit::keyboard::KeyCode::Digit9 => Some(ABC_Game_Engine::input::KeyCode::Key9),
+        winit::keyboard::KeyCode::KeyA => Some(ABC_Game_Engine::input::KeyCode::A),
+        winit::keyboard::KeyCode::KeyB => Some(ABC_Game_Engine::input::KeyCode::B),
+        winit::keyboard::KeyCode::KeyC => Some(ABC_Game_Engine::input::KeyCode::C),
+        winit::keyboard::KeyCode::KeyD => Some(ABC_Game_Engine::input::KeyCode::D),
+        winit::keyboard::KeyCode::KeyE => Some(ABC_Game_Engine::input::KeyCode::E),
+        winit::keyboard::KeyCode::KeyF => Some(ABC_Game_Engine::input::KeyCode::F),
+        winit::keyboard::KeyCode::KeyG => Some(ABC_Game_Engine::input::KeyCode::G),
+        winit::keyboard::KeyCode::KeyH => Some(ABC_Game_Engine::input::KeyCode::H),
+        winit::keyboard::KeyCode::KeyI => Some(ABC_Game_Engine::input::KeyCode::I),
+        winit::keyboard::KeyCode::KeyJ => Some(ABC_Game_Engine::input::KeyCode::J),
+        winit::keyboard::KeyCode::KeyK => Some(ABC_Game_Engine::input::KeyCode::K),
+        winit::keyboard::KeyCode::KeyL => Some(ABC_Game_Engine::input::KeyCode::L),
+        winit::keyboard::KeyCode::KeyM => Some(ABC_Game_Engine::input::KeyCode::M),
+        winit::keyboard::KeyCode::KeyN => Some(ABC_Game_Engine::input::KeyCode::N),
+        winit::keyboard::KeyCode::KeyO => Some(ABC_Game_Engine::input::KeyCode::O),
+        winit::keyboard::KeyCode::KeyP => Some(ABC_Game_Engine::input::KeyCode::P),
+        winit::keyboard::KeyCode::KeyQ => Some(ABC_Game_Engine::input::KeyCode::Q),
+        winit::keyboard::KeyCode::KeyR => Some(ABC_Game_Engine::input::KeyCode::R),
+        winit::keyboard::KeyCode::KeyS => Some(ABC_Game_Engine::input::KeyCode::S),
+        winit::keyboard::KeyCode::KeyT => Some(ABC_Game_Engine::input::KeyCode::T),
+        winit::keyboard::KeyCode::KeyU => Some(ABC_Game_Engine::input::KeyCode::U),
+        winit::keyboard::KeyCode::KeyV => Some(ABC_Game_Engine::input::KeyCode::V),
+        winit::keyboard::KeyCode::KeyW => Some(ABC_Game_Engine::input::KeyCode::W),
+        winit::keyboard::KeyCode::KeyX => Some(ABC_Game_Engine::input::KeyCode::X),
+        winit::keyboard::KeyCode::KeyY => Some(ABC_Game_Engine::input::KeyCode::Y),
+        winit::keyboard::KeyCode::KeyZ => Some(ABC_Game_Engine::input::KeyCode::Z),
+        winit::keyboard::KeyCode::Escape => Some(ABC_Game_Engine::input::KeyCode::Escape),
+        winit::keyboard::KeyCode::F1 => Some(ABC_Game_Engine::input::KeyCode::F1),
+        winit::keyboard::KeyCode::F2 => Some(ABC_Game_Engine::input::KeyCode::F2),
+        winit::keyboard::KeyCode::F3 => Some(ABC_Game_Engine::input::KeyCode::F3),
+        winit::keyboard::KeyCode::F4 => Some(ABC_Game_Engine::input::KeyCode::F4),
+        winit::keyboard::KeyCode::F5 => Some(ABC_Game_Engine::input::KeyCode::F5),
+        winit::keyboard::KeyCode::F6 => Some(ABC_Game_Engine::input::KeyCode::F6),
+        winit::keyboard::KeyCode::F7 => Some(ABC_Game_Engine::input::KeyCode::F7),
+        winit::keyboard::KeyCode::F8 => Some(ABC_Game_Engine::input::KeyCode::F8),
+        winit::keyboard::KeyCode::F9 => Some(ABC_Game_Engine::input::KeyCode::F9),
+        winit::keyboard::KeyCode::F10 => Some(ABC_Game_Engine::input::KeyCode::F10),
+        winit::keyboard::KeyCode::F11 => Some(ABC_Game_Engine::input::KeyCode::F11),
+        winit::keyboard::KeyCode::F12 => Some(ABC_Game_Engine::input::KeyCode::F12),
+        winit::keyboard::KeyCode::F13 => Some(ABC_Game_Engine::input::KeyCode::F13),
+        winit::keyboard::KeyCode::F14 => Some(ABC_Game_Engine::input::KeyCode::F14),
+        winit::keyboard::KeyCode::F15 => Some(ABC_Game_Engine::input::KeyCode::F15),
+        winit::keyboard::KeyCode::F16 => Some(ABC_Game_Engine::input::KeyCode::F16),
+        winit::keyboard::KeyCode::F17 => Some(ABC_Game_Engine::input::KeyCode::F17),
+        winit::keyboard::KeyCode::F18 => Some(ABC_Game_Engine::input::KeyCode::F18),
+        winit::keyboard::KeyCode::F19 => Some(ABC_Game_Engine::input::KeyCode::F19),
+        winit::keyboard::KeyCode::F20 => Some(ABC_Game_Engine::input::KeyCode::F20),
+        winit::keyboard::KeyCode::F21 => Some(ABC_Game_Engine::input::KeyCode::F21),
+        winit::keyboard::KeyCode::F22 => Some(ABC_Game_Engine::input::KeyCode::F22),
+        winit::keyboard::KeyCode::F23 => Some(ABC_Game_Engine::input::KeyCode::F23),
+        winit::keyboard::KeyCode::F24 => Some(ABC_Game_Engine::input::KeyCode::F24),
+        winit::keyboard::KeyCode::PrintScreen => Some(ABC_Game_Engine::input::KeyCode::Snapshot),
+        winit::keyboard::KeyCode::ScrollLock => Some(ABC_Game_Engine::input::KeyCode::Scroll),
+        winit::keyboard::KeyCode::Pause => Some(ABC_Game_Engine::input::KeyCode::Pause),
+        winit::keyboard::KeyCode::Insert => Some(ABC_Game_Engine::input::KeyCode::Insert),
+        winit::keyboard::KeyCode::Home => Some(ABC_Game_Engine::input::KeyCode::Home),
+        winit::keyboard::KeyCode::Delete => Some(ABC_Game_Engine::input::KeyCode::Delete),
+        winit::keyboard::KeyCode::End => Some(ABC_Game_Engine::input::KeyCode::End),
+        winit::keyboard::KeyCode::PageDown => Some(ABC_Game_Engine::input::KeyCode::PageDown),
+        winit::keyboard::KeyCode::PageUp => Some(ABC_Game_Engine::input::KeyCode::PageUp),
+        winit::keyboard::KeyCode::ArrowLeft => Some(ABC_Game_Engine::input::KeyCode::Left),
+        winit::keyboard::KeyCode::ArrowUp => Some(ABC_Game_Engine::input::KeyCode::Up),
+        winit::keyboard::KeyCode::ArrowRight => Some(ABC_Game_Engine::input::KeyCode::Right),
+        winit::keyboard::KeyCode::ArrowDown => Some(ABC_Game_Engine::input::KeyCode::Down),
+        winit::keyboard::KeyCode::Backspace => Some(ABC_Game_Engine::input::KeyCode::Backspace),
+        winit::keyboard::KeyCode::Enter => Some(ABC_Game_Engine::input::KeyCode::Return),
+        winit::keyboard::KeyCode::Space => Some(ABC_Game_Engine::input::KeyCode::Space),
+        winit::keyboard::KeyCode::Comma => Some(ABC_Game_Engine::input::KeyCode::Comma),
+        winit::keyboard::KeyCode::Minus => Some(ABC_Game_Engine::input::KeyCode::Minus),
+        winit::keyboard::KeyCode::Period => Some(ABC_Game_Engine::input::KeyCode::Period),
+        winit::keyboard::KeyCode::Slash => Some(ABC_Game_Engine::input::KeyCode::Slash),
+        winit::keyboard::KeyCode::Semicolon => Some(ABC_Game_Engine::input::KeyCode::Semicolon),
+        winit::keyboard::KeyCode::Equal => Some(ABC_Game_Engine::input::KeyCode::Equals),
+        winit::keyboard::KeyCode::Quote => Some(ABC_Game_Engine::input::KeyCode::Apostrophe),
+        winit::keyboard::KeyCode::Backslash => Some(ABC_Game_Engine::input::KeyCode::Backslash),
+        winit::keyboard::KeyCode::BracketLeft => Some(ABC_Game_Engine::input::KeyCode::LBracket),
+        winit::keyboard::KeyCode::BracketRight => Some(ABC_Game_Engine::input::KeyCode::RBracket),
+        winit::keyboard::KeyCode::Backquote => Some(ABC_Game_Engine::input::KeyCode::Grave),
+        winit::keyboard::KeyCode::ControlLeft => Some(ABC_Game_Engine::input::KeyCode::LControl),
+        winit::keyboard::KeyCode::ShiftLeft => Some(ABC_Game_Engine::input::KeyCode::LShift),
+        winit::keyboard::KeyCode::AltLeft => Some(ABC_Game_Engine::input::KeyCode::LAlt),
+        winit::keyboard::KeyCode::ControlRight => Some(ABC_Game_Engine::input::KeyCode::RControl),
+        winit::keyboard::KeyCode::ShiftRight => Some(ABC_Game_Engine::input::KeyCode::RShift),
+        winit::keyboard::KeyCode::AltRight => Some(ABC_Game_Engine::input::KeyCode::RAlt),
+        winit::keyboard::KeyCode::NumLock => Some(ABC_Game_Engine::input::KeyCode::Numlock),
+        winit::keyboard::KeyCode::Numpad0 => Some(ABC_Game_Engine::input::KeyCode::Numpad0),
+        winit::keyboard::KeyCode::Numpad1 => Some(ABC_Game_Engine::input::KeyCode::Numpad1),
+        winit::keyboard::KeyCode::Numpad2 => Some(ABC_Game_Engine::input::KeyCode::Numpad2),
+        winit::keyboard::KeyCode::Numpad3 => Some(ABC_Game_Engine::input::KeyCode::Numpad3),
+        winit::keyboard::KeyCode::Numpad4 => Some(ABC_Game_Engine::input::KeyCode::Numpad4),
+        winit::keyboard::KeyCode::Numpad5 => Some(ABC_Game_Engine::input::KeyCode::Numpad5),
+        winit::keyboard::KeyCode::Numpad6 => Some(ABC_Game_Engine::input::KeyCode::Numpad6),
+        winit::keyboard::KeyCode::Numpad7 => Some(ABC_Game_Engine::input::KeyCode::Numpad7),
+        winit::keyboard::KeyCode::Numpad8 => Some(ABC_Game_Engine::input::KeyCode::Numpad8),
+        winit::keyboard::KeyCode::Numpad9 => Some(ABC_Game_Engine::input::KeyCode::Numpad9),
+        winit::keyboard::KeyCode::NumpadAdd => Some(ABC_Game_Engine::input::KeyCode::NumpadAdd),
+        winit::keyboard::KeyCode::NumpadDecimal => {
+            Some(ABC_Game_Engine::input::KeyCode::NumpadDecimal)
+        }
+        winit::keyboard::KeyCode::NumpadDivide => {
+            Some(ABC_Game_Engine::input::KeyCode::NumpadDivide)
+        }
+        winit::keyboard::KeyCode::NumpadEnter => Some(ABC_Game_Engine::input::KeyCode::NumpadEnter),
+        winit::keyboard::KeyCode::NumpadEqual => {
+            Some(ABC_Game_Engine::input::KeyCode::NumpadEquals)
+        }
+        winit::keyboard::KeyCode::NumpadMultiply => {
+            Some(ABC_Game_Engine::input::KeyCode::NumpadMultiply)
+        }
+        winit::keyboard::KeyCode::NumpadSubtract => {
+            Some(ABC_Game_Engine::input::KeyCode::NumpadSubtract)
+        }
+        winit::keyboard::KeyCode::CapsLock => Some(ABC_Game_Engine::input::KeyCode::Capital),
+        _ => None, // we don't care about the rest of the keys for now, if we are missing a key, file an issue
+    }
+}
 
 #[derive(Clone, Copy)]
 pub struct Camera {

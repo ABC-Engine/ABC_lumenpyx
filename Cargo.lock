@@ -5,8 +5,7 @@ version = 3
 [[package]]
 name = "ABC-ECS"
 version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eb65073b276c2cc6c3f4a1760ad5ec5b07e802561155c99a1b13b9c3b4123fcb"
+source = "git+https://github.com/ABC-Engine/ABC-ECS#c5c9976b17b8f49630ca327076b2e3eacf60ab54"
 dependencies = [
  "anymap",
  "nohash-hasher",
@@ -18,9 +17,10 @@ dependencies = [
 [[package]]
 name = "ABC_Game_Engine"
 version = "0.1.0"
-source = "git+https://github.com/ABC-Engine/ABC-Game-Engine#24b2aa8625abf4afcf6c21d26c51ae385ef5f338"
+source = "git+https://github.com/ABC-Engine/ABC-Game-Engine#2819405d99e14a5dbab04fe01c49e38e37d7f863"
 dependencies = [
  "ABC-ECS",
+ "fxhash",
  "glam",
  "rand",
  "rodio",
@@ -34,6 +34,7 @@ dependencies = [
  "ABC_Game_Engine",
  "glium",
  "lumenpyx",
+ "winit",
 ]
 
 [[package]]
@@ -678,9 +679,9 @@ dependencies = [
 
 [[package]]
 name = "flate2"
-version = "1.0.28"
+version = "1.0.29"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "46303f565772937ffe1d394a4fac6f411c6013172fadde9dcdb1e147a086940e"
+checksum = "4556222738635b7a3417ae6130d8f52201e45a0c4d1a907f0826383adb5f85e7"
 dependencies = [
  "crc32fast",
  "miniz_oxide",
@@ -727,6 +728,15 @@ name = "foreign-types-shared"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "aa9a19cbb55df58761df49b23516a86d432839add4af60fc256da840f66ed35b"
+
+[[package]]
+name = "fxhash"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c31b6d751ae2c7f11320402d34e41349dd1016f8d5d45e48c4312bc8625af50c"
+dependencies = [
+ "byteorder",
+]
 
 [[package]]
 name = "gethostname"
@@ -1113,9 +1123,9 @@ checksum = "01cda141df6706de531b6c46c3a33ecca755538219bd484262fa09410c13539c"
 
 [[package]]
 name = "lock_api"
-version = "0.4.11"
+version = "0.4.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3c168f8615b12bc01f9c17e2eb0cc07dcae1940121185446edc3744920e8ef45"
+checksum = "07af8b9cdd281b7915f413fa73f29ebd5d55d0d3f0155584dade1ff18cea1b17"
 dependencies = [
  "autocfg",
  "scopeguard",
@@ -1139,6 +1149,7 @@ dependencies = [
 [[package]]
 name = "lumenpyx"
 version = "0.1.0"
+source = "git+https://github.com/ABC-Engine/lumenpyx#c2fe6298def69999d87399ec4fa8782a32588149"
 dependencies = [
  "glium",
  "image",
@@ -1194,14 +1205,6 @@ name = "minimal-lexical"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "68354c5c6bd36d73ff3feceb05efa59b6acb7626617f4962be322a825e61f79a"
-
-[[package]]
-name = "minimal_input_example"
-version = "0.1.0"
-dependencies = [
- "ABC_Game_Engine",
- "ABC_lumenpyx",
-]
 
 [[package]]
 name = "miniz_oxide"
@@ -2129,7 +2132,7 @@ dependencies = [
  "serde",
  "serde_spanned",
  "toml_datetime",
- "winnow 0.6.6",
+ "winnow 0.6.7",
 ]
 
 [[package]]
@@ -2731,9 +2734,9 @@ dependencies = [
 
 [[package]]
 name = "winnow"
-version = "0.6.6"
+version = "0.6.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f0c976aaaa0e1f90dbb21e9587cdaf1d9679a1cde8875c0d6bd83ab96a208352"
+checksum = "14b9415ee827af173ebb3f15f9083df5a122eb93572ec28741fb153356ea2578"
 dependencies = [
  "memchr",
 ]
