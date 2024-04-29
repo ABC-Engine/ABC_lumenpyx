@@ -101,16 +101,9 @@ fn main() {
     //scene.world.add_system(CameraMovementSystem);
     scene.world.add_system(CircleMovementSystem);
 
-    let entities_and_components_ptr =
-        (&mut scene.world.entities_and_components) as *mut EntitiesAndComponents;
-
     // this is to run the program for forever or until returned
-    lumen_program.run(
-        event_loop,
-        unsafe { &mut *entities_and_components_ptr },
-        |program| {
-            scene.world.run();
-            render(&mut scene.world.entities_and_components, program);
-        },
-    );
+    lumen_program.run(event_loop, &mut scene.world, |program, world| {
+        world.run();
+        render(&mut world.entities_and_components, program);
+    });
 }

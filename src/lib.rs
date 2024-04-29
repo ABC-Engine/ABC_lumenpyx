@@ -10,7 +10,7 @@ use drawables::lights::{AreaLight, DirectionalLight, PointLight};
 use drawables::primitives::{Animation, Circle, Cylinder, Rectangle, Sphere, Sprite};
 pub use drawables::*;
 use lumenpyx::draw_all;
-use ABC_Game_Engine::{self};
+use ABC_Game_Engine::{self, World};
 use ABC_Game_Engine::{EntitiesAndComponents, Input};
 use ABC_Game_Engine::{Entity, KeyCode};
 
@@ -38,13 +38,9 @@ impl LumenpyxProgram {
     }
 
     /// run the program with the given update function
-    pub fn run<F>(
-        &mut self,
-        event_loop: EventLoop<()>,
-        entities_and_components: &mut EntitiesAndComponents,
-        mut update: F,
-    ) where
-        F: FnMut(&mut Self),
+    pub fn run<F>(&mut self, event_loop: EventLoop<()>, world: &mut World, mut update: F)
+    where
+        F: FnMut(&mut Self, &mut World),
     {
         event_loop
             .run(move |ev, window_target| match ev {
@@ -57,7 +53,8 @@ impl LumenpyxProgram {
                     }
                     winit::event::WindowEvent::RedrawRequested => {
                         {
-                            let input = entities_and_components
+                            let input = world
+                                .entities_and_components
                                 .get_resource_mut::<Input>()
                                 .expect("failed to get input system");
 
@@ -67,7 +64,7 @@ impl LumenpyxProgram {
                             }
                             input.advance_frame();
                         }
-                        update(self);
+                        update(self, world);
                     }
                     winit::event::WindowEvent::KeyboardInput { event, .. } => {
                         if event.state == winit::event::ElementState::Pressed {
