@@ -9,6 +9,7 @@ use std::ops::{Deref, DerefMut};
 use drawables::lights::{AreaLight, DirectionalLight, PointLight};
 use drawables::primitives::{Animation, Circle, Cylinder, Rectangle, Sphere, Sprite};
 pub use drawables::*;
+pub use lumenpyx::animation::AnimationStateMachine;
 use lumenpyx::draw_all;
 use ABC_Game_Engine::{self, World};
 use ABC_Game_Engine::{EntitiesAndComponents, Input};
@@ -347,16 +348,25 @@ fn get_all_drawables_on_object_mut(
     Vec<&mut dyn Drawable>,
     Option<&mut ABC_Game_Engine::Transform>,
 ) {
-    let (circle, rectangle, sprite, sphere, animation, cylinder, transform) =
-        entities_and_components.try_get_components_mut::<(
-            Circle,
-            Rectangle,
-            Sprite,
-            Sphere,
-            Animation,
-            Cylinder,
-            ABC_Game_Engine::Transform,
-        )>(entity);
+    let (
+        circle,
+        rectangle,
+        sprite,
+        sphere,
+        animation,
+        cylinder,
+        animation_state_machine,
+        transform,
+    ) = entities_and_components.try_get_components_mut::<(
+        Circle,
+        Rectangle,
+        Sprite,
+        Sphere,
+        Animation,
+        Cylinder,
+        AnimationStateMachine,
+        ABC_Game_Engine::Transform,
+    )>(entity);
 
     // this is abhorrent, but I can't think of any better way to do this
     let mut drawables = vec![];
@@ -382,6 +392,12 @@ fn get_all_drawables_on_object_mut(
     }
     match cylinder {
         Some(cylinder) => drawables.push(cylinder as &mut dyn Drawable),
+        None => (),
+    }
+    match animation_state_machine {
+        Some(animation_state_machine) => {
+            drawables.push(animation_state_machine as &mut dyn Drawable)
+        }
         None => (),
     }
 
