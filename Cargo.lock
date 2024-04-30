@@ -5,7 +5,7 @@ version = 3
 [[package]]
 name = "ABC-ECS"
 version = "0.2.0"
-source = "git+https://github.com/ABC-Engine/ABC-ECS#3c80910dc5711935754e7d7709c1d6d44fc0ee84"
+source = "git+https://github.com/ABC-Engine/ABC-ECS#72450019dde5334d3747c5e19d65eb7d9b6ee80e"
 dependencies = [
  "anymap",
  "nohash-hasher",
@@ -17,7 +17,7 @@ dependencies = [
 [[package]]
 name = "ABC_Game_Engine"
 version = "0.1.0"
-source = "git+https://github.com/ABC-Engine/ABC-Game-Engine#4303746940429ed4db8bfa387b8b4f55b20aee0f"
+source = "git+https://github.com/ABC-Engine/ABC-Game-Engine#8db9e632b3498709c3a024ed9f619b583d11b970"
 dependencies = [
  "ABC-ECS",
  "fxhash",
@@ -1100,7 +1100,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0c2a198fb6b0eada2a8df47933734e6d35d350665a33a3593d7164fa52c75c19"
 dependencies = [
  "cfg-if",
- "windows-targets 0.48.5",
+ "windows-targets 0.52.5",
 ]
 
 [[package]]
@@ -1148,7 +1148,7 @@ dependencies = [
 [[package]]
 name = "lumenpyx"
 version = "0.1.0"
-source = "git+https://github.com/ABC-Engine/lumenpyx#3a2de0a4b238e4b6684bb30f6563cc4a1af0dfcf"
+source = "git+https://github.com/ABC-Engine/lumenpyx#d112418a1dbde320c9d48a0a720713387f36d594"
 dependencies = [
  "glium",
  "image",

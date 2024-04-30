@@ -12,6 +12,7 @@ use drawables::primitives::{
 };
 pub use drawables::*;
 use lumenpyx::draw_all;
+use lumenpyx::Transform;
 use ABC_Game_Engine::{self, World};
 use ABC_Game_Engine::{EntitiesAndComponents, Input};
 use ABC_Game_Engine::{Entity, KeyCode};
@@ -24,7 +25,8 @@ pub use lumenpyx::drawable_object::Drawable;
 pub use lumenpyx::lights::LightDrawable;
 pub use lumenpyx::primitives::Normal;
 pub use lumenpyx::primitives::Texture;
-pub use lumenpyx::Transform;
+pub use lumenpyx::DebugOption;
+pub use lumenpyx::RenderSettings;
 
 pub struct LumenpyxProgram {
     pub program: lumenpyx::LumenpyxProgram,
@@ -58,7 +60,7 @@ impl LumenpyxProgram {
                             let input = world
                                 .entities_and_components
                                 .get_resource_mut::<Input>()
-                                .expect("failed to get input system");
+                                .expect("failed to get input system probably a version mismatch");
 
                             input.clear_key_states();
                             for key in self.keys_down.iter() {
@@ -433,6 +435,10 @@ fn get_all_entities_with_drawables(entities_and_components: &EntitiesAndComponen
         .get_entities_with_component::<Cylinder>()
         .cloned()
         .collect::<Vec<Entity>>();
+    let entities_with_animation_state_machine = entities_and_components
+        .get_entities_with_component::<AnimationStateMachine>()
+        .cloned()
+        .collect::<Vec<Entity>>();
 
     // lights are counted as drawables in this case
 
@@ -455,11 +461,13 @@ fn get_all_entities_with_drawables(entities_and_components: &EntitiesAndComponen
     entities.extend(entities_with_sphere);
     entities.extend(entities_with_animation);
     entities.extend(entities_with_cylinder);
+    entities.extend(entities_with_animation_state_machine);
     entities.extend(entities_with_point_light);
     entities.extend(entities_with_area_light);
     entities.extend(entities_with_directional_light);
 
     // remove duplicates
+    entities.sort();
     entities.dedup();
 
     entities
@@ -525,7 +533,6 @@ fn render_objects(
         }
     }
 
-    // for now, we will only have one light
     draw_all(lights_in_scene, sprites, lumen_program, camera)
 }
 
