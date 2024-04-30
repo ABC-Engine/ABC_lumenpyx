@@ -7,9 +7,10 @@ use std::ops::{Deref, DerefMut};
 
 //pub use lumenpyx::*;
 use drawables::lights::{AreaLight, DirectionalLight, PointLight};
-use drawables::primitives::{Animation, Circle, Cylinder, Rectangle, Sphere, Sprite};
+use drawables::primitives::{
+    Animation, AnimationStateMachine, Circle, Cylinder, Rectangle, Sphere, Sprite,
+};
 pub use drawables::*;
-pub use lumenpyx::animation::AnimationStateMachine;
 use lumenpyx::draw_all;
 use ABC_Game_Engine::{self, World};
 use ABC_Game_Engine::{EntitiesAndComponents, Input};

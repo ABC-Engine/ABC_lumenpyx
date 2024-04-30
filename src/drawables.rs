@@ -116,11 +116,7 @@ pub mod primitives {
     }
 
     impl AnimationStateMachine {
-        pub fn new(
-            animations: Vec<Animation>,
-            current_animation: usize,
-            program: &LumenpyxProgram,
-        ) -> Self {
+        pub fn new(animations: Vec<Animation>) -> Self {
             let mut animations_to_use = Vec::new();
             for animation in animations {
                 animations_to_use.push(animation.lumen_animation);
