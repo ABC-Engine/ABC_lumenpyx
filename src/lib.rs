@@ -17,10 +17,11 @@ use ABC_Game_Engine::{self, World};
 use ABC_Game_Engine::{EntitiesAndComponents, Input};
 use ABC_Game_Engine::{Entity, KeyCode};
 
-use winit::event::WindowEvent;
 use winit::event_loop::EventLoop;
 
 // pub use everything from lumenpyx but exclude the things we override in drawables
+pub use lumenpyx::blending::BlendMode;
+pub use lumenpyx::blending::BlendObject;
 pub use lumenpyx::drawable_object::Drawable;
 pub use lumenpyx::lights::LightDrawable;
 pub use lumenpyx::primitives::Normal;
@@ -344,11 +345,39 @@ fn get_all_lights_on_object_mut(
     (lights, transform)
 }
 
+enum OwnedOrMutableDrawable<'a> {
+    Owned(Box<dyn Drawable + 'a>),
+    Mutable(&'a mut dyn Drawable),
+}
+
+impl<'a> Deref for OwnedOrMutableDrawable<'a> {
+    type Target = dyn Drawable + 'a;
+
+    fn deref(&self) -> &Self::Target {
+        match self {
+            OwnedOrMutableDrawable::Mutable(mutable) => {
+                let dyn_obj: &dyn Drawable = *mutable;
+                dyn_obj
+            }
+            OwnedOrMutableDrawable::Owned(owned) => &(**owned),
+        }
+    }
+}
+
+impl DerefMut for OwnedOrMutableDrawable<'_> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        match self {
+            OwnedOrMutableDrawable::Mutable(mutable) => *mutable,
+            OwnedOrMutableDrawable::Owned(owned) => &mut (**owned),
+        }
+    }
+}
+
 fn get_all_drawables_on_object_mut(
     entities_and_components: &mut EntitiesAndComponents,
     entity: Entity,
 ) -> (
-    Vec<&mut dyn Drawable>,
+    Vec<OwnedOrMutableDrawable>,
     Option<&mut ABC_Game_Engine::Transform>,
 ) {
     let (
@@ -359,6 +388,7 @@ fn get_all_drawables_on_object_mut(
         animation,
         cylinder,
         animation_state_machine,
+        blend_mode,
         transform,
     ) = entities_and_components.try_get_components_mut::<(
         Circle,
@@ -368,43 +398,69 @@ fn get_all_drawables_on_object_mut(
         Animation,
         Cylinder,
         AnimationStateMachine,
+        BlendMode,
         ABC_Game_Engine::Transform,
     )>(entity);
 
     // this is abhorrent, but I can't think of any better way to do this
-    let mut drawables = vec![];
+    let mut mut_drawables = vec![];
     match circle {
-        Some(circle) => drawables.push(circle as &mut dyn Drawable),
+        Some(circle) => mut_drawables.push(circle as &mut dyn Drawable),
         None => (),
     }
     match rectangle {
-        Some(rectangle) => drawables.push(rectangle as &mut dyn Drawable),
+        Some(rectangle) => mut_drawables.push(rectangle as &mut dyn Drawable),
         None => (),
     }
     match sprite {
-        Some(sprite) => drawables.push(sprite as &mut dyn Drawable),
+        Some(sprite) => mut_drawables.push(sprite as &mut dyn Drawable),
         None => (),
     }
     match sphere {
-        Some(sphere) => drawables.push(sphere as &mut dyn Drawable),
+        Some(sphere) => mut_drawables.push(sphere as &mut dyn Drawable),
         None => (),
     }
     match animation {
-        Some(animation) => drawables.push(animation as &mut dyn Drawable),
+        Some(animation) => mut_drawables.push(animation as &mut dyn Drawable),
         None => (),
     }
     match cylinder {
-        Some(cylinder) => drawables.push(cylinder as &mut dyn Drawable),
+        Some(cylinder) => mut_drawables.push(cylinder as &mut dyn Drawable),
         None => (),
     }
     match animation_state_machine {
         Some(animation_state_machine) => {
-            drawables.push(animation_state_machine as &mut dyn Drawable)
+            mut_drawables.push(animation_state_machine as &mut dyn Drawable)
         }
         None => (),
     }
 
-    (drawables, transform)
+    let mut final_drawables = vec![];
+    if let Some(blend_mode) = blend_mode {
+        if mut_drawables.len() < 2 {
+            // TODO: when we have a logger, log this as a warning
+            // we need at least 2 drawables to blend
+        } else {
+            if mut_drawables.len() > 2 {
+                // TODO: when we have a logger, log this as a warning
+                // we can only blend 2 drawables, first 2 will be blended rest will be ignored
+            }
+
+            let drawable1 = mut_drawables.remove(0);
+            let drawable2 = mut_drawables.remove(0);
+
+            let mut new_blend_obj =
+                lumenpyx::blending::BlendObject::new(drawable1, drawable2, blend_mode.clone());
+
+            final_drawables.push(OwnedOrMutableDrawable::Owned(Box::new(new_blend_obj)));
+            // error for now, because it doesn't borrow fixed in the next commit to lumenpyx
+        }
+        for drawable in mut_drawables {
+            final_drawables.push(OwnedOrMutableDrawable::Mutable(drawable));
+        }
+    }
+
+    (final_drawables, transform)
 }
 
 fn get_all_entities_with_drawables(entities_and_components: &EntitiesAndComponents) -> Vec<Entity> {
@@ -520,9 +576,9 @@ fn render_objects(
             if let Some(_transform) = transform {
                 let transform = &(entity_depth_item.transform);
 
-                for drawable in drawables {
+                for mut drawable in drawables {
                     drawable.set_transform(abc_transform_to_lumen_transform(transform.clone()));
-                    sprites.push(&*drawable);
+                    sprites.push(drawable);
                 }
 
                 for light in lights {
@@ -533,7 +589,13 @@ fn render_objects(
         }
     }
 
-    draw_all(lights_in_scene, sprites, lumen_program, camera)
+    // re-borrow everything while retaining the owned objects
+    let mut sprite_borrows = vec![];
+    for sprite in &sprites {
+        sprite_borrows.push(sprite.deref());
+    }
+
+    draw_all(lights_in_scene, sprite_borrows, lumen_program, camera)
 }
 
 /// A recursive function that collects all renderable entities in the scene

@@ -1,4 +1,4 @@
-workspace = { members = [ "examples/render_sprite"] }
+workspace = { members = [ "examples/masking_test", "examples/render_sprite"] }
 
 [package]
 name = "ABC_lumenpyx"

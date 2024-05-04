@@ -6,6 +6,8 @@ use ABC_Game_Engine::{EntitiesAndComponents, System};
 use ABC_Game_Engine::{KeyCode, KeyState};
 use ABC_lumenpyx::lights;
 use ABC_lumenpyx::primitives::Circle;
+use ABC_lumenpyx::primitives::Rectangle;
+use ABC_lumenpyx::BlendMode;
 use ABC_lumenpyx::LumenpyxProgram;
 use ABC_lumenpyx::{render, Camera};
 
@@ -85,7 +87,9 @@ fn main() {
         ));
 
         entities_and_components.add_entity_with((
-            Circle::new([1.0, 0.0, 0.0, 1.0], 10.0),
+            Circle::new([0.0, 0.0, 0.0, 1.0], 10.0),
+            Rectangle::new([0.0, 1.0, 0.0, 1.0], 10.0, 10.0),
+            BlendMode::Subtractive,
             ABC_Game_Engine::Transform::default(),
         ));
 
