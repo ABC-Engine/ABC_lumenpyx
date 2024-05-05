@@ -11,6 +11,21 @@ pub mod primitives {
     use std::ops::Deref;
     use std::ops::DerefMut;
 
+    #[derive(Clone, Copy, Debug)]
+    pub struct BlendComponent {
+        pub(crate) lumen_blend_mode: lumenpyx::blending::BlendMode,
+        pub(crate) reverse: bool,
+    }
+
+    impl BlendComponent {
+        pub fn new(lumen_blend_mode: lumenpyx::blending::BlendMode, reverse: bool) -> Self {
+            Self {
+                lumen_blend_mode,
+                reverse,
+            }
+        }
+    }
+
     /// An animation drawable object
     pub struct Animation {
         lumen_animation: lumenpyx::animation::Animation,

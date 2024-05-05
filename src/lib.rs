@@ -10,6 +10,7 @@ use drawables::lights::{AreaLight, DirectionalLight, PointLight};
 use drawables::primitives::{
     Animation, AnimationStateMachine, Circle, Cylinder, Rectangle, Sphere, Sprite,
 };
+
 pub use drawables::*;
 use lumenpyx::draw_all;
 use lumenpyx::Transform;
@@ -28,6 +29,8 @@ pub use lumenpyx::primitives::Normal;
 pub use lumenpyx::primitives::Texture;
 pub use lumenpyx::DebugOption;
 pub use lumenpyx::RenderSettings;
+
+use crate::primitives::BlendComponent;
 
 pub struct LumenpyxProgram {
     pub program: lumenpyx::LumenpyxProgram,
@@ -398,7 +401,7 @@ fn get_all_drawables_on_object_mut(
         Animation,
         Cylinder,
         AnimationStateMachine,
-        BlendMode,
+        BlendComponent,
         ABC_Game_Engine::Transform,
     )>(entity);
 
@@ -449,16 +452,29 @@ fn get_all_drawables_on_object_mut(
             let drawable1 = mut_drawables.remove(0);
             let drawable2 = mut_drawables.remove(0);
 
-            let mut new_blend_obj =
-                lumenpyx::blending::BlendObject::new(drawable1, drawable2, blend_mode.clone());
+            let new_blend_obj = lumenpyx::blending::BlendObject::new(
+                if blend_mode.reverse {
+                    drawable2
+                } else {
+                    drawable1
+                },
+                if blend_mode.reverse {
+                    drawable1
+                } else {
+                    drawable2
+                },
+                blend_mode.lumen_blend_mode,
+            );
 
+            println!("new blend obj");
             final_drawables.push(OwnedOrMutableDrawable::Owned(Box::new(new_blend_obj)));
-            // error for now, because it doesn't borrow fixed in the next commit to lumenpyx
         }
         for drawable in mut_drawables {
             final_drawables.push(OwnedOrMutableDrawable::Mutable(drawable));
         }
     }
+
+    println!("final drawables count: {}", final_drawables.len());
 
     (final_drawables, transform)
 }
