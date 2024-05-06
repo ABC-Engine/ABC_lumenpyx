@@ -469,9 +469,9 @@ fn get_all_drawables_on_object_mut(
             println!("new blend obj");
             final_drawables.push(OwnedOrMutableDrawable::Owned(Box::new(new_blend_obj)));
         }
-        for drawable in mut_drawables {
-            final_drawables.push(OwnedOrMutableDrawable::Mutable(drawable));
-        }
+    }
+    for drawable in mut_drawables {
+        final_drawables.push(OwnedOrMutableDrawable::Mutable(drawable));
     }
 
     println!("final drawables count: {}", final_drawables.len());
