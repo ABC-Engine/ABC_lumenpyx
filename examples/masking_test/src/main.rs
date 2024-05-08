@@ -12,21 +12,6 @@ use ABC_lumenpyx::BlendMode;
 use ABC_lumenpyx::LumenpyxProgram;
 use ABC_lumenpyx::{render, Camera};
 
-struct CameraMovementSystem;
-
-impl System for CameraMovementSystem {
-    fn run(&mut self, entities_and_components: &mut EntitiesAndComponents) {
-        let camera_entity = entities_and_components
-            .get_entities_with_component::<Camera>()
-            .next();
-
-        let (transform,) = entities_and_components
-            .get_components_mut::<(Transform,)>(*camera_entity.expect("camera not found"));
-
-        transform.x += 0.01;
-    }
-}
-
 struct CircleMovementSystem;
 
 impl System for CircleMovementSystem {
@@ -61,37 +46,71 @@ impl System for CircleMovementSystem {
             }
         }
 
-        let circle_entity = entities_and_components
-            .get_entities_with_component::<Circle>()
-            .next();
+        let circle_parent_entity = entities_and_components
+            .get_entities_with_component::<EntitiesAndComponents>()
+            .next()
+            .expect("circle parent not found");
 
-        let (transform,) = entities_and_components
-            .get_components_mut::<(Transform,)>(*circle_entity.expect("circle not found"));
+        let circle_parent = entities_and_components
+            .get_components_mut::<(EntitiesAndComponents,)>(*circle_parent_entity)
+            .0;
+
+        let circle_entity = circle_parent
+            .get_entities_with_component::<Circle>()
+            .next()
+            .expect("circle not found");
+
+        let (transform,) = circle_parent.get_components_mut::<(Transform,)>(*circle_entity);
 
         transform.x += movement_dir[0] * delta_time * 100.0;
         transform.y += movement_dir[1] * delta_time * 100.0;
+
+        //println!("x: {}, y: {}", transform.x, transform.y);
     }
 }
 
 fn main() {
     let mut scene = Scene::new();
 
-    let (mut lumen_program, event_loop) =
-        LumenpyxProgram::new([(128.0 * (16.0 / 9.0)) as u32, 128], "name of your program");
+    let (mut lumen_program, event_loop) = LumenpyxProgram::new([128, 128], "name of your program");
 
     {
         let entities_and_components = &mut scene.world.entities_and_components;
 
         entities_and_components.add_entity_with((
-            lights::PointLight::new([1.0, 1.0, 1.0], 1.0, 0.01),
+            lights::PointLight::new([1.0, 1.0, 1.0], 1.0, 0.0),
             ABC_Game_Engine::Transform::default(),
         ));
 
+        let background_transform = Transform {
+            x: 0.0,
+            y: 0.0,
+            z: -1.0,
+            ..Transform::default()
+        };
         entities_and_components.add_entity_with((
-            Circle::new([1.0, 1.0, 1.0, 1.0], 5.0),
-            Rectangle::new([1.0, 1.0, 1.0, 1.0], 20.0, 20.0),
-            BlendComponent::new(BlendMode::Subtractive, true),
+            Rectangle::new([0.0, 1.0, 0.0, 1.0], 128.0, 128.0),
+            background_transform,
+        ));
+
+        let mut children = EntitiesAndComponents::new();
+
+        let circle_transform = Transform {
+            x: 0.0,
+            y: 0.0,
+            z: 1.0,
+            ..Transform::default()
+        };
+        children.add_entity_with((Circle::new([1.0, 1.0, 1.0, 1.0], 5.0), circle_transform));
+        children.add_entity_with((
+            Rectangle::new([1.0, 1.0, 1.0, 1.0], 128.0, 128.0),
+            Transform::default(),
+        ));
+
+        entities_and_components.add_entity_with((
+            BlendComponent::new(BlendMode::Subtractive),
             ABC_Game_Engine::Transform::default(),
+            children,
         ));
 
         // make a camera, to specify the position we would like to view everything from
@@ -99,8 +118,7 @@ fn main() {
             .add_entity_with((Camera::new(), ABC_Game_Engine::Transform::default()));
     }
 
-    //scene.world.add_system(CameraMovementSystem);
-    scene.world.add_system(CircleMovementSystem);
+    scene.world.add_system(CircleMovementSystem {});
 
     // this is to run the program for forever or until returned
     lumen_program.run(event_loop, &mut scene.world, |program, world| {

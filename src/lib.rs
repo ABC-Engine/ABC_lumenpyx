@@ -30,7 +30,7 @@ pub use lumenpyx::primitives::Texture;
 pub use lumenpyx::DebugOption;
 pub use lumenpyx::RenderSettings;
 
-use crate::primitives::BlendComponent;
+use crate::primitives::{BlendComponent, LumenBlendObject};
 
 pub struct LumenpyxProgram {
     pub program: lumenpyx::LumenpyxProgram,
@@ -376,11 +376,11 @@ impl DerefMut for OwnedOrMutableDrawable<'_> {
     }
 }
 
-fn get_all_drawables_on_object_mut(
-    entities_and_components: &mut EntitiesAndComponents,
+fn get_all_drawables_on_object_mut<'a>(
+    entities_and_components: &'a mut EntitiesAndComponents,
     entity: Entity,
 ) -> (
-    Vec<OwnedOrMutableDrawable>,
+    Vec<OwnedOrMutableDrawable<'a>>,
     Option<&mut ABC_Game_Engine::Transform>,
 ) {
     let (
@@ -393,6 +393,7 @@ fn get_all_drawables_on_object_mut(
         animation_state_machine,
         blend_mode,
         transform,
+        children,
     ) = entities_and_components.try_get_components_mut::<(
         Circle,
         Rectangle,
@@ -403,6 +404,7 @@ fn get_all_drawables_on_object_mut(
         AnimationStateMachine,
         BlendComponent,
         ABC_Game_Engine::Transform,
+        EntitiesAndComponents,
     )>(entity);
 
     // this is abhorrent, but I can't think of any better way to do this
@@ -438,43 +440,81 @@ fn get_all_drawables_on_object_mut(
         None => (),
     }
 
+    let transform_clone = if let Some(ref transform) = transform {
+        Some(transform)
+    } else {
+        None
+    };
+
     let mut final_drawables = vec![];
-    if let Some(blend_mode) = blend_mode {
-        if mut_drawables.len() < 2 {
-            // TODO: when we have a logger, log this as a warning
-            // we need at least 2 drawables to blend
-        } else {
-            if mut_drawables.len() > 2 {
-                // TODO: when we have a logger, log this as a warning
-                // we can only blend 2 drawables, first 2 will be blended rest will be ignored
-            }
+    match (blend_mode, children, transform_clone) {
+        (Some(blend_mode), Some(children), Some(transform)) => {
+            let mut drawables_in_children = vec![];
 
-            let drawable1 = mut_drawables.remove(0);
-            let drawable2 = mut_drawables.remove(0);
-
-            let new_blend_obj = lumenpyx::blending::BlendObject::new(
-                if blend_mode.reverse {
-                    drawable2
-                } else {
-                    drawable1
-                },
-                if blend_mode.reverse {
-                    drawable1
-                } else {
-                    drawable2
-                },
-                blend_mode.lumen_blend_mode,
+            // collect the drawables in the children, this is kinda wasteful if there is more than 2 drawables, but the user should know better
+            collect_renderable_entities(
+                children,
+                vec![],
+                &ABC_Game_Engine::Transform::default(),
+                &mut drawables_in_children,
             );
 
-            println!("new blend obj");
-            final_drawables.push(OwnedOrMutableDrawable::Owned(Box::new(new_blend_obj)));
+            // sort the drawables so we can blend the first two
+            drawables_in_children.sort();
+
+            if drawables_in_children.len() < 2 {
+                // TODO: when we have a logger, log this as a warning
+                // we need at least 2 drawables to blend
+            } else {
+                if drawables_in_children.len() > 2 {
+                    // TODO: when we have a logger, log this as a warning
+                    // we can only blend 2 drawables, first 2 will be blended rest will be ignored
+                }
+
+                let drawable_entity_1 = drawables_in_children.remove(0).entity[0];
+                let drawable_entity_2 = drawables_in_children.remove(0).entity[0];
+
+                // SAFETY: we know that the two entities are separate from each other
+                let (mut drawables_on_1, transform_1);
+                {
+                    let children_ptr = children as *mut EntitiesAndComponents;
+                    let children_ref = unsafe { &mut *children_ptr };
+                    (drawables_on_1, transform_1) =
+                        get_all_drawables_on_object_mut(children_ref, drawable_entity_1);
+                }
+
+                let (mut drawables_on_2, transform_2);
+                {
+                    (drawables_on_2, transform_2) =
+                        get_all_drawables_on_object_mut(children, drawable_entity_2);
+                }
+
+                let mut drawable_1 = drawables_on_1.remove(0);
+                let mut drawable_2 = drawables_on_2.remove(0);
+
+                if let Some(transform_1) = transform_1 {
+                    drawable_1.set_transform(abc_transform_to_lumen_transform(
+                        &*transform_1 + &transform,
+                    ));
+                }
+                if let Some(transform_2) = transform_2 {
+                    drawable_2.set_transform(abc_transform_to_lumen_transform(
+                        &*transform_2 + &transform,
+                    ));
+                }
+
+                let new_blend_obj =
+                    LumenBlendObject::new(drawable_1, drawable_2, blend_mode.lumen_blend_mode);
+
+                final_drawables.push(OwnedOrMutableDrawable::Owned(Box::new(new_blend_obj)));
+            }
         }
+        _ => (), // no blend mode or no children
     }
+
     for drawable in mut_drawables {
         final_drawables.push(OwnedOrMutableDrawable::Mutable(drawable));
     }
-
-    println!("final drawables count: {}", final_drawables.len());
 
     (final_drawables, transform)
 }
@@ -511,6 +551,10 @@ fn get_all_entities_with_drawables(entities_and_components: &EntitiesAndComponen
         .get_entities_with_component::<AnimationStateMachine>()
         .cloned()
         .collect::<Vec<Entity>>();
+    let entities_with_blend_component = entities_and_components
+        .get_entities_with_component::<BlendComponent>()
+        .cloned()
+        .collect::<Vec<Entity>>();
 
     // lights are counted as drawables in this case
 
@@ -534,6 +578,7 @@ fn get_all_entities_with_drawables(entities_and_components: &EntitiesAndComponen
     entities.extend(entities_with_animation);
     entities.extend(entities_with_cylinder);
     entities.extend(entities_with_animation_state_machine);
+    entities.extend(entities_with_blend_component);
     entities.extend(entities_with_point_light);
     entities.extend(entities_with_area_light);
     entities.extend(entities_with_directional_light);
@@ -579,7 +624,7 @@ fn render_objects(
         let current_entities_and_components_ptr =
             current_entities_and_components as *mut EntitiesAndComponents;
 
-        // SAFETY: THis is safe as long as we don't use sprites or lights_in scene before the loop ends
+        // SAFETY: This is safe as long as we don't use sprites or lights_in scene before the loop ends
         // AND the types of get_all_lights_on_object_mut and get_all_drawables_on_object_mut are non overlapping
         let (lights, _) = get_all_lights_on_object_mut(
             unsafe { &mut *current_entities_and_components_ptr },
@@ -645,11 +690,15 @@ fn collect_renderable_entities(
         .collect::<Vec<Entity>>();
 
     for entity in entities_with_children {
-        let (transform, children) = entities_and_components
-            .try_get_components::<(ABC_Game_Engine::Transform, EntitiesAndComponents)>(entity);
+        let (transform, children, blend_comp) = entities_and_components.try_get_components::<(
+            ABC_Game_Engine::Transform,
+            EntitiesAndComponents,
+            BlendComponent,
+        )>(entity);
 
-        match (transform, children) {
-            (Some(transform), Some(children)) => {
+        // if we have a blend component, our children will be part of the blend component, so don't render them here
+        match (transform, children, blend_comp) {
+            (Some(transform), Some(children), None) => {
                 let mut new_parents = parent_entities.clone();
                 new_parents.push(entity);
                 collect_renderable_entities(
@@ -659,7 +708,7 @@ fn collect_renderable_entities(
                     out_list,
                 )
             }
-            (None, Some(children)) => {
+            (None, Some(children), None) => {
                 let mut new_parents = parent_entities.clone();
                 new_parents.push(entity);
                 collect_renderable_entities(children, new_parents, transform_offset, out_list)

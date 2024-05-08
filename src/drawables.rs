@@ -11,18 +11,81 @@ pub mod primitives {
     use std::ops::Deref;
     use std::ops::DerefMut;
 
+    use crate::OwnedOrMutableDrawable;
+
+    pub(crate) struct LumenBlendObject<'a> {
+        blend_1: OwnedOrMutableDrawable<'a>,
+        blend_2: OwnedOrMutableDrawable<'a>,
+        blend_mode: lumenpyx::blending::BlendMode,
+        transform: Transform,
+    }
+
+    impl<'a> LumenBlendObject<'a> {
+        pub(crate) fn new(
+            blend_1: OwnedOrMutableDrawable<'a>,
+            blend_2: OwnedOrMutableDrawable<'a>,
+            blend_mode: lumenpyx::blending::BlendMode,
+        ) -> Self {
+            Self {
+                blend_1,
+                blend_2,
+                blend_mode,
+                transform: Transform::default(),
+            }
+        }
+    }
+
+    impl<'a> Drawable for LumenBlendObject<'a> {
+        fn draw(
+            &self,
+            program: &LumenpyxProgram,
+            transform_matrix: [[f32; 4]; 4],
+            albedo_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
+            height_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
+            roughness_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
+            normal_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
+        ) {
+            println!("{:?}", self.blend_2.get_position()[3][0]);
+
+            // construct the blend object and draw it
+            let blend_object = lumenpyx::blending::BlendObject::new(
+                &*self.blend_1,
+                &*self.blend_2,
+                self.blend_mode,
+            );
+
+            blend_object.draw(
+                program,
+                transform_matrix,
+                albedo_framebuffer,
+                height_framebuffer,
+                roughness_framebuffer,
+                normal_framebuffer,
+            );
+        }
+
+        fn set_transform(&mut self, transform: Transform) {
+            self.transform = transform;
+        }
+
+        fn try_load_shaders(&self, program: &mut LumenpyxProgram) {
+            lumenpyx::blending::BlendObject::new(&*self.blend_1, &*self.blend_2, self.blend_mode)
+                .try_load_shaders(program);
+        }
+
+        fn get_position(&self) -> [[f32; 4]; 4] {
+            Transform::default().get_matrix()
+        }
+    }
+
     #[derive(Clone, Copy, Debug)]
     pub struct BlendComponent {
         pub(crate) lumen_blend_mode: lumenpyx::blending::BlendMode,
-        pub(crate) reverse: bool,
     }
 
     impl BlendComponent {
-        pub fn new(lumen_blend_mode: lumenpyx::blending::BlendMode, reverse: bool) -> Self {
-            Self {
-                lumen_blend_mode,
-                reverse,
-            }
+        pub fn new(lumen_blend_mode: lumenpyx::blending::BlendMode) -> Self {
+            Self { lumen_blend_mode }
         }
     }
 
