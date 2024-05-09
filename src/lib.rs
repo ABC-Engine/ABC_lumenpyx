@@ -719,6 +719,7 @@ fn collect_renderable_entities(
 }
 
 /// takes a Vec<Entity> and returns the EntitiesAndComponents and Entity that it points to
+/// takes a specific path in a tree of entities and returns the last entity and the EntitiesAndComponents that it is in
 fn get_entities_and_components_from_entity_list(
     entities_and_components: &mut EntitiesAndComponents,
     mut entity_list: Vec<Entity>,
@@ -731,20 +732,19 @@ fn get_entities_and_components_from_entity_list(
     }
 
     let mut current_entities_and_components = entities_and_components;
-    let mut current_entity = entity_list[0];
+
     // the last entity in the list is the one we want to return, and it's not a parent so no need to check for children
     let last_entity = entity_list.pop().unwrap();
 
     for entity in entity_list {
         let children = current_entities_and_components
-            .try_get_components_mut::<(EntitiesAndComponents,)>(current_entity)
+            .try_get_components_mut::<(EntitiesAndComponents,)>(entity)
             .0
             .expect(
                 "failed to get children, this should never happen, please report this as a bug",
             );
 
         current_entities_and_components = children;
-        current_entity = entity;
     }
     (current_entities_and_components, last_entity)
 }

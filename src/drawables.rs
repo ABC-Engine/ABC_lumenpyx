@@ -45,14 +45,14 @@ pub mod primitives {
             roughness_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
             normal_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
         ) {
-            println!("{:?}", self.blend_2.get_position()[3][0]);
-
             // construct the blend object and draw it
-            let blend_object = lumenpyx::blending::BlendObject::new(
+            let mut blend_object = lumenpyx::blending::BlendObject::new(
                 &*self.blend_1,
                 &*self.blend_2,
                 self.blend_mode,
             );
+
+            blend_object.set_transform(self.transform);
 
             blend_object.draw(
                 program,
