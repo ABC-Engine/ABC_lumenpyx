@@ -9,6 +9,7 @@ use ABC_lumenpyx::primitives::BlendComponent;
 use ABC_lumenpyx::primitives::Circle;
 use ABC_lumenpyx::primitives::Rectangle;
 use ABC_lumenpyx::BlendMode;
+use ABC_lumenpyx::LumenpyxEventLoop;
 use ABC_lumenpyx::LumenpyxProgram;
 use ABC_lumenpyx::{render, Camera};
 
@@ -71,8 +72,7 @@ impl System for CircleMovementSystem {
 
 fn main() {
     let mut scene = Scene::new();
-
-    let (mut lumen_program, event_loop) = LumenpyxProgram::new([128, 128], "name of your program");
+    let lumen_event_loop = LumenpyxEventLoop::new(&mut scene.world, [128, 128], "Masking Test");
 
     {
         let entities_and_components = &mut scene.world.entities_and_components;
@@ -121,7 +121,7 @@ fn main() {
     scene.world.add_system(CircleMovementSystem {});
 
     // this is to run the program for forever or until returned
-    lumen_program.run(event_loop, &mut scene.world, |program, world| {
+    lumen_event_loop.run(&mut scene.world, |program, world| {
         world.run();
         render(&mut world.entities_and_components, program);
     });

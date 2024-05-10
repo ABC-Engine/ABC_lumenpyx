@@ -14,7 +14,7 @@ use drawables::primitives::{
 pub use drawables::*;
 use lumenpyx::draw_all;
 use lumenpyx::Transform;
-use ABC_Game_Engine::{self, World};
+use ABC_Game_Engine::{self, Resource, World};
 use ABC_Game_Engine::{EntitiesAndComponents, Input};
 use ABC_Game_Engine::{Entity, KeyCode};
 
@@ -33,33 +33,115 @@ pub use lumenpyx::RenderSettings;
 use crate::primitives::{BlendComponent, LumenBlendObject};
 
 pub struct LumenpyxProgram {
-    pub program: lumenpyx::LumenpyxProgram,
+    pub internal_program: lumenpyx::LumenpyxProgram,
     keys_down: HashSet<KeyCode>,
 }
 
-impl LumenpyxProgram {
-    pub fn new(resolution: [u32; 2], name: &str) -> (Self, EventLoop<()>) {
-        let (program, event_loop) = lumenpyx::LumenpyxProgram::new(resolution, name);
-        let keys_down = HashSet::new();
+impl Resource for LumenpyxProgram {
+    fn update(&mut self) {}
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+    fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
+        self
+    }
+}
 
-        (Self { program, keys_down }, event_loop)
+/// The event loop for the lumenpyx program
+pub struct LumenpyxEventLoop {
+    event_loop: EventLoop<()>,
+}
+
+impl LumenpyxEventLoop {
+    /// create a new lumenpyx event loop
+    /// puts the lumenpyx program in the world as a resource so it can be accessed by the update function
+    pub fn new(world: &mut World, resolution: [u32; 2], name: &str) -> Self {
+        let (program, event_loop) = lumenpyx::LumenpyxProgram::new(resolution, name);
+
+        world.entities_and_components.add_resource(LumenpyxProgram {
+            internal_program: program,
+            keys_down: HashSet::new(),
+        });
+
+        Self { event_loop }
+    }
+
+    /// set the render settings for the program
+    /// this is a convenience function for setting the render settings
+    pub fn set_render_settings(&mut self, world: &mut World, settings: RenderSettings) {
+        let lumen_program = world
+            .entities_and_components
+            .get_resource_mut::<LumenpyxProgram>()
+            .expect("failed to get lumen program");
+
+        lumen_program.internal_program.set_render_settings(settings);
+    }
+
+    /// set the debug options for the program
+    /// this is a convenience function for setting the debug options
+    pub fn set_debug(&mut self, world: &mut World, options: DebugOption) {
+        let lumen_program = world
+            .entities_and_components
+            .get_resource_mut::<LumenpyxProgram>()
+            .expect("failed to get lumen program");
+
+        lumen_program.internal_program.set_debug(options);
+    }
+
+    /// set the name of the window
+    /// this is a convenience function for setting the name of the window
+    pub fn set_name(&mut self, world: &mut World, name: &str) {
+        let lumen_program = world
+            .entities_and_components
+            .get_resource_mut::<LumenpyxProgram>()
+            .expect("failed to get lumen program");
+
+        lumen_program.internal_program.set_name(name);
+    }
+
+    /// set the resolution of the window
+    /// this is a convenience function for setting the resolution of the window
+    pub fn set_resolution(&mut self, world: &mut World, resolution: [u32; 2]) {
+        let lumen_program = world
+            .entities_and_components
+            .get_resource_mut::<LumenpyxProgram>()
+            .expect("failed to get lumen program");
+
+        lumen_program.internal_program.set_resolution(resolution);
     }
 
     /// run the program with the given update function
-    pub fn run<F>(&mut self, event_loop: EventLoop<()>, world: &mut World, mut update: F)
+    pub fn run<F>(self, world: &mut World, mut update: F)
     where
-        F: FnMut(&mut Self, &mut World),
+        F: FnMut(&mut LumenpyxProgram, &mut World),
     {
-        event_loop
+        self.event_loop
             .run(move |ev, window_target| match ev {
                 winit::event::Event::WindowEvent { event, .. } => match event {
                     winit::event::WindowEvent::CloseRequested => {
                         window_target.exit();
                     }
                     winit::event::WindowEvent::Resized(physical_size) => {
-                        self.display.resize(physical_size.into());
+                        let lumen_program = world
+                            .entities_and_components
+                            .get_resource_mut::<LumenpyxProgram>()
+                            .expect("failed to get lumen program");
+                        lumen_program.display.resize(physical_size.into());
                     }
                     winit::event::WindowEvent::RedrawRequested => {
+                        let lumen_program;
+                        {
+                            let lumen_program_ref = world
+                                .entities_and_components
+                                .get_resource_mut::<LumenpyxProgram>()
+                                .expect("failed to get lumen program");
+
+                            // SAFETY: as long as Input and LumenpyxProgram are unique, this is safe
+                            let lumen_program_ptr = lumen_program_ref as *const LumenpyxProgram;
+                            lumen_program =
+                                unsafe { &mut *(lumen_program_ptr as *mut LumenpyxProgram) };
+                        }
+
                         {
                             let input = world
                                 .entities_and_components
@@ -67,21 +149,27 @@ impl LumenpyxProgram {
                                 .expect("failed to get input system probably a version mismatch");
 
                             input.clear_key_states();
-                            for key in self.keys_down.iter() {
+                            for key in lumen_program.keys_down.iter() {
                                 input.set_key_state(*key);
                             }
                             input.advance_frame();
                         }
-                        update(self, world);
+
+                        update(lumen_program, world);
                     }
                     winit::event::WindowEvent::KeyboardInput { event, .. } => {
+                        let lumen_program = world
+                            .entities_and_components
+                            .get_resource_mut::<LumenpyxProgram>()
+                            .expect("failed to get lumen program");
+
                         if event.state == winit::event::ElementState::Pressed {
                             // turn the key event into a key enum in winit
                             match event.physical_key {
                                 winit::keyboard::PhysicalKey::Code(code) => {
                                     let key = winit_input_to_abc_input(code);
                                     if let Some(key) = key {
-                                        self.keys_down.insert(key);
+                                        lumen_program.keys_down.insert(key);
                                     }
                                 }
                                 // maybe we should log something here, once we have a logger...
@@ -94,7 +182,7 @@ impl LumenpyxProgram {
                                 winit::keyboard::PhysicalKey::Code(code) => {
                                     let key = winit_input_to_abc_input(code);
                                     if let Some(key) = key {
-                                        self.keys_down.remove(&key);
+                                        lumen_program.keys_down.remove(&key);
                                     }
                                 }
                                 // maybe we should log something here, once we have a logger...
@@ -106,9 +194,14 @@ impl LumenpyxProgram {
                     _ => (),
                 },
                 winit::event::Event::AboutToWait => {
+                    let lumen_program = world
+                        .entities_and_components
+                        .get_resource_mut::<LumenpyxProgram>()
+                        .expect("failed to get lumen program");
+
                     // RedrawRequested will only when we resize the window, so we need to manually
                     // request it.
-                    self.window.request_redraw();
+                    lumen_program.window.request_redraw();
                 }
                 _ => (),
             })
@@ -116,17 +209,33 @@ impl LumenpyxProgram {
     }
 }
 
+impl LumenpyxProgram {
+    /// create a new lumenpyx program
+    pub(crate) fn new(resolution: [u32; 2], name: &str) -> (Self, EventLoop<()>) {
+        let (program, event_loop) = lumenpyx::LumenpyxProgram::new(resolution, name);
+        let keys_down = HashSet::new();
+
+        (
+            Self {
+                internal_program: program,
+                keys_down,
+            },
+            event_loop,
+        )
+    }
+}
+
 impl Deref for LumenpyxProgram {
     type Target = lumenpyx::LumenpyxProgram;
 
     fn deref(&self) -> &Self::Target {
-        &self.program
+        &self.internal_program
     }
 }
 
 impl DerefMut for LumenpyxProgram {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.program
+        &mut self.internal_program
     }
 }
 
