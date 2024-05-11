@@ -601,6 +601,8 @@ fn get_all_drawables_on_object_mut<'a>(
                 let mut drawable_1 = drawables_on_1.remove(0);
                 let mut drawable_2 = drawables_on_2.remove(0);
 
+                // we set the position of the children rather than the parent
+                // it's a bit weird, but i tried the other way and it didn't work so this is fine
                 if let Some(transform_1) = transform_1 {
                     drawable_1.set_transform(abc_transform_to_lumen_transform(
                         &*transform_1 + &transform,

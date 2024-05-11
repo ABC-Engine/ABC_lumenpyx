@@ -52,7 +52,8 @@ pub mod primitives {
                 self.blend_mode,
             );
 
-            blend_object.set_transform(self.transform);
+            // this broke it, so as long as no one tries to use the transform directly, which the user can't because it's private, this should be fine
+            //blend_object.set_transform(self.transform);
 
             blend_object.draw(
                 program,
