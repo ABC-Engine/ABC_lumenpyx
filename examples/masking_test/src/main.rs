@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 use ABC_Game_Engine::DeltaTime;
 use ABC_Game_Engine::Input;
 use ABC_Game_Engine::Scene;
@@ -66,7 +68,31 @@ impl System for CircleMovementSystem {
         transform.x += movement_dir[0] * delta_time * 100.0;
         transform.y += movement_dir[1] * delta_time * 100.0;
 
+        // shouldn't be noticeable, but just to show that rotation isn't doing anything weird
+        transform.rotation += delta_time * 100.0;
+
         //println!("x: {}, y: {}", transform.x, transform.y);
+    }
+}
+
+struct SceneMoveSystem {
+    start_time: Instant,
+}
+
+impl System for SceneMoveSystem {
+    fn run(&mut self, entities_and_components: &mut EntitiesAndComponents) {
+        let time = self.start_time.elapsed().as_secs_f64();
+        let x = time.sin() * 100.0;
+
+        let camera_entity = entities_and_components
+            .get_entities_with_component::<Camera>()
+            .next()
+            .expect("camera not found");
+
+        let (transform,) =
+            entities_and_components.get_components_mut::<(Transform,)>(*camera_entity);
+
+        transform.x = x;
     }
 }
 
@@ -119,6 +145,9 @@ fn main() {
     }
 
     scene.world.add_system(CircleMovementSystem {});
+    scene.world.add_system(SceneMoveSystem {
+        start_time: Instant::now(),
+    });
 
     // this is to run the program for forever or until returned
     lumen_event_loop.run(&mut scene.world, |program, world| {

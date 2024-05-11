@@ -890,10 +890,8 @@ impl Ord for EntityDepthItem {
 }
 
 fn abc_transform_to_lumen_transform(transform: ABC_Game_Engine::Transform) -> Transform {
-    let mut lumen_transform = Transform::new([0.0, 0.0, 0.0]);
-    lumen_transform.set_x(transform.x as f32);
-    lumen_transform.set_y(transform.y as f32);
-    lumen_transform.set_rotation(transform.rotation as f32);
+    let mut lumen_transform = Transform::new([transform.x as f32, transform.y as f32, 0.0]);
     lumen_transform.set_scale(transform.scale as f32, transform.scale as f32, 1.0);
+    lumen_transform.set_rotation(transform.rotation as f32);
     lumen_transform
 }

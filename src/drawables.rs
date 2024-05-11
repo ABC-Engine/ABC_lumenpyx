@@ -39,7 +39,7 @@ pub mod primitives {
         fn draw(
             &self,
             program: &LumenpyxProgram,
-            transform_matrix: [[f32; 4]; 4],
+            transform: &Transform,
             albedo_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
             height_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
             roughness_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
@@ -56,7 +56,7 @@ pub mod primitives {
 
             blend_object.draw(
                 program,
-                transform_matrix,
+                transform,
                 albedo_framebuffer,
                 height_framebuffer,
                 roughness_framebuffer,
@@ -73,8 +73,8 @@ pub mod primitives {
                 .try_load_shaders(program);
         }
 
-        fn get_position(&self) -> [[f32; 4]; 4] {
-            Transform::default().get_matrix()
+        fn get_transform(&self) -> Transform {
+            self.transform
         }
     }
 
@@ -146,7 +146,7 @@ pub mod primitives {
         fn draw(
             &self,
             program: &LumenpyxProgram,
-            transform_matrix: [[f32; 4]; 4],
+            transform: &Transform,
             albedo_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
             height_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
             roughness_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
@@ -154,7 +154,7 @@ pub mod primitives {
         ) {
             self.lumen_animation.draw(
                 program,
-                transform_matrix,
+                transform,
                 albedo_framebuffer,
                 height_framebuffer,
                 roughness_framebuffer,
@@ -170,8 +170,8 @@ pub mod primitives {
             self.lumen_animation.try_load_shaders(program);
         }
 
-        fn get_position(&self) -> [[f32; 4]; 4] {
-            self.lumen_animation.get_position()
+        fn get_transform(&self) -> Transform {
+            self.lumen_animation.get_transform()
         }
     }
 
@@ -217,7 +217,7 @@ pub mod primitives {
         fn draw(
             &self,
             program: &LumenpyxProgram,
-            transform_matrix: [[f32; 4]; 4],
+            transform: &Transform,
             albedo_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
             height_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
             roughness_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
@@ -225,7 +225,7 @@ pub mod primitives {
         ) {
             self.lumen_animation_state_machine.draw(
                 program,
-                transform_matrix,
+                transform,
                 albedo_framebuffer,
                 height_framebuffer,
                 roughness_framebuffer,
@@ -241,8 +241,8 @@ pub mod primitives {
             self.lumen_animation_state_machine.try_load_shaders(program);
         }
 
-        fn get_position(&self) -> [[f32; 4]; 4] {
-            self.lumen_animation_state_machine.get_position()
+        fn get_transform(&self) -> Transform {
+            self.lumen_animation_state_machine.get_transform()
         }
     }
 
@@ -280,7 +280,7 @@ pub mod primitives {
         fn draw(
             &self,
             program: &LumenpyxProgram,
-            transform_matrix: [[f32; 4]; 4],
+            transform: &Transform,
             albedo_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
             height_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
             roughness_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
@@ -288,7 +288,7 @@ pub mod primitives {
         ) {
             self.lumen_circle.draw(
                 program,
-                transform_matrix,
+                transform,
                 albedo_framebuffer,
                 height_framebuffer,
                 roughness_framebuffer,
@@ -304,8 +304,8 @@ pub mod primitives {
             self.lumen_circle.try_load_shaders(program);
         }
 
-        fn get_position(&self) -> [[f32; 4]; 4] {
-            self.lumen_circle.get_position()
+        fn get_transform(&self) -> Transform {
+            self.lumen_circle.get_transform()
         }
     }
 
@@ -344,7 +344,7 @@ pub mod primitives {
         fn draw(
             &self,
             program: &LumenpyxProgram,
-            transform_matrix: [[f32; 4]; 4],
+            transform: &Transform,
             albedo_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
             height_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
             roughness_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
@@ -352,7 +352,7 @@ pub mod primitives {
         ) {
             self.lumen_rectangle.draw(
                 program,
-                transform_matrix,
+                transform,
                 albedo_framebuffer,
                 height_framebuffer,
                 roughness_framebuffer,
@@ -368,8 +368,8 @@ pub mod primitives {
             self.lumen_rectangle.try_load_shaders(program);
         }
 
-        fn get_position(&self) -> [[f32; 4]; 4] {
-            self.lumen_rectangle.get_position()
+        fn get_transform(&self) -> Transform {
+            self.lumen_rectangle.get_transform()
         }
     }
 
@@ -416,7 +416,7 @@ pub mod primitives {
         fn draw(
             &self,
             program: &LumenpyxProgram,
-            transform_matrix: [[f32; 4]; 4],
+            transform: &Transform,
             albedo_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
             height_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
             roughness_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
@@ -424,7 +424,7 @@ pub mod primitives {
         ) {
             self.lumen_sprite.draw(
                 program,
-                transform_matrix,
+                transform,
                 albedo_framebuffer,
                 height_framebuffer,
                 roughness_framebuffer,
@@ -440,8 +440,8 @@ pub mod primitives {
             self.lumen_sprite.try_load_shaders(program);
         }
 
-        fn get_position(&self) -> [[f32; 4]; 4] {
-            self.lumen_sprite.get_position()
+        fn get_transform(&self) -> Transform {
+            self.lumen_sprite.get_transform()
         }
     }
 
@@ -480,7 +480,7 @@ pub mod primitives {
         fn draw(
             &self,
             program: &LumenpyxProgram,
-            transform_matrix: [[f32; 4]; 4],
+            transform: &Transform,
             albedo_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
             height_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
             roughness_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
@@ -488,7 +488,7 @@ pub mod primitives {
         ) {
             self.lumen_cylinder.draw(
                 program,
-                transform_matrix,
+                transform,
                 albedo_framebuffer,
                 height_framebuffer,
                 roughness_framebuffer,
@@ -504,8 +504,8 @@ pub mod primitives {
             self.lumen_cylinder.try_load_shaders(program);
         }
 
-        fn get_position(&self) -> [[f32; 4]; 4] {
-            self.lumen_cylinder.get_position()
+        fn get_transform(&self) -> Transform {
+            self.lumen_cylinder.get_transform()
         }
     }
 
@@ -543,7 +543,7 @@ pub mod primitives {
         fn draw(
             &self,
             program: &LumenpyxProgram,
-            transform_matrix: [[f32; 4]; 4],
+            transform: &Transform,
             albedo_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
             height_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
             roughness_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
@@ -551,7 +551,7 @@ pub mod primitives {
         ) {
             self.lumen_sphere.draw(
                 program,
-                transform_matrix,
+                transform,
                 albedo_framebuffer,
                 height_framebuffer,
                 roughness_framebuffer,
@@ -567,8 +567,8 @@ pub mod primitives {
             self.lumen_sphere.try_load_shaders(program);
         }
 
-        fn get_position(&self) -> [[f32; 4]; 4] {
-            self.lumen_sphere.get_position()
+        fn get_transform(&self) -> Transform {
+            self.lumen_sphere.get_transform()
         }
     }
 
@@ -654,7 +654,7 @@ pub mod lights {
             self.lumen_directional_light.try_load_shaders(program);
         }
 
-        fn get_transform(&self) -> [[f32; 4]; 4] {
+        fn get_transform(&self) -> Transform {
             self.lumen_directional_light.get_transform()
         }
     }
@@ -712,7 +712,7 @@ pub mod lights {
             );
         }
 
-        fn get_transform(&self) -> [[f32; 4]; 4] {
+        fn get_transform(&self) -> Transform {
             self.lumen_point_light.get_transform()
         }
 
@@ -780,7 +780,7 @@ pub mod lights {
             );
         }
 
-        fn get_transform(&self) -> [[f32; 4]; 4] {
+        fn get_transform(&self) -> Transform {
             self.lumen_area_light.get_transform()
         }
 
