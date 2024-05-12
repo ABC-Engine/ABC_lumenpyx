@@ -150,9 +150,8 @@ impl LumenpyxEventLoop {
 
                             input.clear_key_states();
                             for key in lumen_program.keys_down.iter() {
-                                input.set_key_state(*key);
+                                input.set_key_down(*key);
                             }
-                            input.advance_frame();
                         }
 
                         update(lumen_program, world);
@@ -604,18 +603,16 @@ fn get_all_drawables_on_object_mut<'a>(
                 // we set the position of the children rather than the parent
                 // it's a bit weird, but i tried the other way and it didn't work so this is fine
                 if let Some(transform_1) = transform_1 {
-                    drawable_1.set_transform(abc_transform_to_lumen_transform(
-                        &*transform_1 + &transform,
-                    ));
+                    drawable_1.set_transform(abc_transform_to_lumen_transform(*transform_1));
                 }
                 if let Some(transform_2) = transform_2 {
-                    drawable_2.set_transform(abc_transform_to_lumen_transform(
-                        &*transform_2 + &transform,
-                    ));
+                    drawable_2.set_transform(abc_transform_to_lumen_transform(*transform_2));
                 }
 
-                let new_blend_obj =
+                let mut new_blend_obj =
                     LumenBlendObject::new(drawable_1, drawable_2, blend_mode.lumen_blend_mode);
+
+                new_blend_obj.set_transform(abc_transform_to_lumen_transform(**transform));
 
                 final_drawables.push(OwnedOrMutableDrawable::Owned(Box::new(new_blend_obj)));
             }

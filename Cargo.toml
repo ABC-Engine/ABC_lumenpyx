@@ -11,8 +11,8 @@ edition = "2021"
 lumenpyx = { git = "https://github.com/ABC-Engine/lumenpyx" }
 # REPLACE BEFORE PUBLISHING
 #lumenpyx = {path = "G:/graphics programming/opengl_test/lumenpyx"}
-ABC_Game_Engine = { git = "https://github.com/ABC-Engine/ABC-Game-Engine"}
+#ABC_Game_Engine = { git = "https://github.com/ABC-Engine/ABC-Game-Engine"}
 # REPLACE BEFORE PUBLISHING
-#ABC_Game_Engine = {path = "G:/github_projects/ABC-Game-Engine"}
+ABC_Game_Engine = {path = "G:/github_projects/ABC-Game-Engine"}
 glium = "0.34.0"
 winit = "0.29.9"
