@@ -29,6 +29,7 @@ pub use lumenpyx::primitives::Normal;
 pub use lumenpyx::primitives::Texture;
 pub use lumenpyx::DebugOption;
 pub use lumenpyx::RenderSettings;
+pub use lumenpyx::TextureHandle;
 
 use crate::primitives::{BlendComponent, LumenBlendObject};
 

@@ -5,7 +5,7 @@ version = 3
 [[package]]
 name = "ABC-ECS"
 version = "0.2.0"
-source = "git+https://github.com/ABC-Engine/ABC-ECS#4d248187f0bcd5b96bcbac92aba07c892deb236d"
+source = "git+https://github.com/ABC-Engine/ABC-ECS#d1a22ac84d00ba2aea6d20c763c33cbb02492396"
 dependencies = [
  "anymap",
  "nohash-hasher",
@@ -17,6 +17,7 @@ dependencies = [
 [[package]]
 name = "ABC_Game_Engine"
 version = "0.1.0"
+source = "git+https://github.com/ABC-Engine/ABC-Game-Engine#761a1c7e3c574691fcfd2d6991871345a9571cb5"
 dependencies = [
  "ABC-ECS",
  "fxhash",
@@ -27,22 +28,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "ABC_Game_Engine"
-version = "0.1.0"
-source = "git+https://github.com/ABC-Engine/ABC-Game-Engine#d292f110857e99de297f79841b7533530656c019"
-dependencies = [
- "ABC-ECS",
- "fxhash",
- "glam",
- "rand",
- "rodio",
-]
-
-[[package]]
 name = "ABC_lumenpyx"
 version = "0.1.0"
 dependencies = [
- "ABC_Game_Engine 0.1.0",
+ "ABC_Game_Engine",
  "glium",
  "lumenpyx",
  "winit",
@@ -350,9 +339,9 @@ checksum = "79296716171880943b8470b5f8d03aa55eb2e645a4874bdbb28adb49162e012c"
 
 [[package]]
 name = "bytemuck"
-version = "1.15.0"
+version = "1.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5d6d68c57235a3a081186990eca2867354726650f42f7516ca50c28d6281fd15"
+checksum = "78834c15cb5d5efe3452d58b1e8ba890dd62d21907f867f383358198e56ebca5"
 
 [[package]]
 name = "byteorder"
@@ -1222,7 +1211,7 @@ dependencies = [
 [[package]]
 name = "lumenpyx"
 version = "0.1.0"
-source = "git+https://github.com/ABC-Engine/lumenpyx#d66387013fa2684f642bfda9bf42389962e24924"
+source = "git+https://github.com/ABC-Engine/lumenpyx#e999d2ecfe748b84ffecbaebde3f661aeb0395d6"
 dependencies = [
  "glium",
  "image",
@@ -1243,7 +1232,7 @@ dependencies = [
 name = "masking_test"
 version = "0.1.0"
 dependencies = [
- "ABC_Game_Engine 0.1.0 (git+https://github.com/ABC-Engine/ABC-Game-Engine)",
+ "ABC_Game_Engine",
  "ABC_lumenpyx",
 ]
 
@@ -1911,7 +1900,7 @@ checksum = "adad44e29e4c806119491a7f06f03de4d1af22c3a680dd47f1e6e179439d1f56"
 name = "render_sprite"
 version = "0.1.0"
 dependencies = [
- "ABC_Game_Engine 0.1.0 (git+https://github.com/ABC-Engine/ABC-Game-Engine)",
+ "ABC_Game_Engine",
  "ABC_lumenpyx",
 ]
 
@@ -2013,18 +2002,18 @@ dependencies = [
 
 [[package]]
 name = "serde"
-version = "1.0.201"
+version = "1.0.202"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "780f1cebed1629e4753a1a38a3c72d30b97ec044f0aef68cb26650a3c5cf363c"
+checksum = "226b61a0d411b2ba5ff6d7f73a476ac4f8bb900373459cd00fab8512828ba395"
 dependencies = [
  "serde_derive",
 ]
 
 [[package]]
 name = "serde_derive"
-version = "1.0.201"
+version = "1.0.202"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c5e405930b9796f1c00bee880d03fc7e0bb4b9a11afc776885ffe84320da2865"
+checksum = "6048858004bcff69094cd972ed40a32500f153bd3be9f716b2eed2e8217c4838"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2033,9 +2022,9 @@ dependencies = [
 
 [[package]]
 name = "serde_spanned"
-version = "0.6.5"
+version = "0.6.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eb3622f419d1296904700073ea6cc23ad690adbd66f13ea683df73298736f0c1"
+checksum = "79e674e01f999af37c49f70a6ede167a8a60b2503e56c5599532a65baa5969a0"
 dependencies = [
  "serde",
 ]
@@ -2125,9 +2114,9 @@ dependencies = [
 
 [[package]]
 name = "smol_str"
-version = "0.2.1"
+version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e6845563ada680337a52d43bb0b29f396f2d911616f6573012645b9e3d048a49"
+checksum = "dd538fb6910ac1099850255cf94a94df6551fbdd602454387d0adb2d1ca6dead"
 dependencies = [
  "serde",
 ]
@@ -2328,21 +2317,21 @@ checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 
 [[package]]
 name = "toml"
-version = "0.8.12"
+version = "0.8.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e9dd1545e8208b4a5af1aa9bbd0b4cf7e9ea08fabc5d0a5c67fcaafa17433aa3"
+checksum = "a4e43f8cc456c9704c851ae29c67e17ef65d2c30017c17a9765b89c382dc8bba"
 dependencies = [
  "serde",
  "serde_spanned",
  "toml_datetime",
- "toml_edit 0.22.12",
+ "toml_edit 0.22.13",
 ]
 
 [[package]]
 name = "toml_datetime"
-version = "0.6.5"
+version = "0.6.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3550f4e9685620ac18a50ed434eb3aec30db8ba93b0287467bca5826ea25baf1"
+checksum = "4badfd56924ae69bcc9039335b2e017639ce3f9b001c393c1b2d1ef846ce2cbf"
 dependencies = [
  "serde",
 ]
@@ -2360,9 +2349,9 @@ dependencies = [
 
 [[package]]
 name = "toml_edit"
-version = "0.22.12"
+version = "0.22.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d3328d4f68a705b2a4498da1d580585d39a6510f98318a2cec3018a7ec61ddef"
+checksum = "c127785850e8c20836d49732ae6abfa47616e60bf9d9f57c43c250361a9db96c"
 dependencies = [
  "indexmap",
  "serde",
@@ -2653,9 +2642,9 @@ checksum = "53a85b86a771b1c87058196170769dd264f66c0782acf1ae6cc51bfd64b39082"
 
 [[package]]
 name = "wide"
-version = "0.7.18"
+version = "0.7.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5925f89e85af9e6e776bedb11ddeb2365b85cb56c13bfb30223e4b6398d30bb6"
+checksum = "aab6594190de06d718a5dbc5fa781ab62f8903797056480e549ca74add6b7065"
 dependencies = [
  "bytemuck",
  "safe_arch",

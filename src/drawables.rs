@@ -5,8 +5,11 @@ pub mod primitives {
     use lumenpyx::drawable_object::Drawable;
     use lumenpyx::lights::LightDrawable;
     use lumenpyx::primitives::Normal;
+    use lumenpyx::primitives::NormalInput;
     use lumenpyx::primitives::Texture;
+    use lumenpyx::primitives::TextureInput;
     use lumenpyx::LumenpyxProgram;
+    use lumenpyx::TextureHandle;
     use lumenpyx::Transform;
     use std::ops::Deref;
     use std::ops::DerefMut;
@@ -91,6 +94,7 @@ pub mod primitives {
     }
 
     /// An animation drawable object
+    #[derive(Clone)]
     pub struct Animation {
         lumen_animation: lumenpyx::animation::Animation,
     }
@@ -103,10 +107,16 @@ pub mod primitives {
             normal: Normal,
             num_frames: usize,
             time_between_frames: std::time::Duration,
-            program: &LumenpyxProgram,
-        ) -> Self {
-            Self {
-                lumen_animation: lumenpyx::animation::Animation::new_from_images(
+            program: &mut LumenpyxProgram,
+        ) -> (
+            Self,
+            Vec<TextureHandle>,
+            Vec<TextureHandle>,
+            Vec<TextureHandle>,
+            Vec<TextureHandle>,
+        ) {
+            let (anim, albedo, height, roughness, normal) =
+                lumenpyx::animation::Animation::new_from_images(
                     albedo,
                     height,
                     roughness,
@@ -115,8 +125,17 @@ pub mod primitives {
                     time_between_frames,
                     Transform::default(),
                     program,
-                ),
-            }
+                );
+
+            (
+                Self {
+                    lumen_animation: anim,
+                },
+                albedo,
+                height,
+                roughness,
+                normal,
+            )
         }
 
         pub fn new_from_spritesheet(
@@ -126,10 +145,16 @@ pub mod primitives {
             normal: Normal,
             num_frames: usize,
             time_between_frames: std::time::Duration,
-            program: &LumenpyxProgram,
-        ) -> Self {
-            Self {
-                lumen_animation: lumenpyx::animation::Animation::new_from_spritesheet(
+            program: &mut LumenpyxProgram,
+        ) -> (
+            Self,
+            Vec<TextureHandle>,
+            Vec<TextureHandle>,
+            Vec<TextureHandle>,
+            Vec<TextureHandle>,
+        ) {
+            let (anim, albedo, height, roughness, normal) =
+                lumenpyx::animation::Animation::new_from_spritesheet(
                     albedo,
                     height,
                     roughness,
@@ -138,8 +163,36 @@ pub mod primitives {
                     time_between_frames,
                     Transform::default(),
                     program,
-                ),
-            }
+                );
+
+            (
+                Self {
+                    lumen_animation: anim,
+                },
+                albedo,
+                height,
+                roughness,
+                normal,
+            )
+        }
+
+        pub fn new_from_handles(
+            albedo: Vec<TextureHandle>,
+            height: Vec<TextureHandle>,
+            roughness: Vec<TextureHandle>,
+            normal: Vec<TextureHandle>,
+            time_between_frames: std::time::Duration,
+            program: &mut LumenpyxProgram,
+        ) {
+            lumenpyx::animation::Animation::new_from_handles(
+                albedo,
+                height,
+                roughness,
+                normal,
+                program,
+                time_between_frames,
+                Transform::default(),
+            );
         }
     }
 
@@ -388,28 +441,43 @@ pub mod primitives {
         }
     }
 
+    #[derive(Clone, Copy)]
     pub struct Sprite {
         lumen_sprite: lumenpyx::primitives::Sprite,
     }
 
     impl Sprite {
         pub fn new(
-            albedo: Texture,
-            height: Texture,
-            roughness: Texture,
-            normal: Normal,
-            program: &LumenpyxProgram,
-        ) -> Self {
-            Self {
-                lumen_sprite: lumenpyx::primitives::Sprite::new(
-                    albedo,
-                    height,
-                    roughness,
-                    normal,
-                    program,
-                    Transform::default(),
-                ),
-            }
+            albedo: TextureInput,
+            height: TextureInput,
+            roughness: TextureInput,
+            normal: NormalInput,
+            program: &mut LumenpyxProgram,
+        ) -> (
+            Self,
+            TextureHandle,
+            TextureHandle,
+            TextureHandle,
+            TextureHandle,
+        ) {
+            let (sprite, albedo, height, roughness, normal) = lumenpyx::primitives::Sprite::new(
+                albedo,
+                height,
+                roughness,
+                normal,
+                program,
+                Transform::default(),
+            );
+
+            (
+                Self {
+                    lumen_sprite: sprite,
+                },
+                albedo,
+                height,
+                roughness,
+                normal,
+            )
         }
     }
 
