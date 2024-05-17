@@ -94,6 +94,7 @@ pub mod primitives {
     }
 
     /// An animation drawable object
+    /// make sure to restart the animation when adding it to the ECS if you don't have loop animation enabled
     #[derive(Clone)]
     pub struct Animation {
         lumen_animation: lumenpyx::animation::Animation,
@@ -108,6 +109,7 @@ pub mod primitives {
             num_frames: usize,
             time_between_frames: std::time::Duration,
             program: &mut LumenpyxProgram,
+            loop_animation: bool,
         ) -> (
             Self,
             Vec<TextureHandle>,
@@ -125,6 +127,7 @@ pub mod primitives {
                     time_between_frames,
                     Transform::default(),
                     program,
+                    loop_animation,
                 );
 
             (
@@ -146,6 +149,7 @@ pub mod primitives {
             num_frames: usize,
             time_between_frames: std::time::Duration,
             program: &mut LumenpyxProgram,
+            loop_animation: bool,
         ) -> (
             Self,
             Vec<TextureHandle>,
@@ -163,6 +167,7 @@ pub mod primitives {
                     time_between_frames,
                     Transform::default(),
                     program,
+                    loop_animation,
                 );
 
             (
@@ -183,16 +188,24 @@ pub mod primitives {
             normal: Vec<TextureHandle>,
             time_between_frames: std::time::Duration,
             program: &mut LumenpyxProgram,
-        ) {
-            lumenpyx::animation::Animation::new_from_handles(
-                albedo,
-                height,
-                roughness,
-                normal,
-                program,
-                time_between_frames,
-                Transform::default(),
-            );
+            loop_animation: bool,
+        ) -> Self {
+            Self {
+                lumen_animation: lumenpyx::animation::Animation::new_from_handles(
+                    albedo,
+                    height,
+                    roughness,
+                    normal,
+                    program,
+                    time_between_frames,
+                    Transform::default(),
+                    loop_animation,
+                ),
+            }
+        }
+
+        pub fn restart_animation(&mut self) {
+            self.lumen_animation.restart_animation();
         }
     }
 
