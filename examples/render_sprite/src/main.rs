@@ -36,7 +36,7 @@ impl System for CircleMovementSystem {
             delta_time = entities_and_components
                 .get_resource::<DeltaTime>()
                 .unwrap()
-                .delta_time;
+                .get_delta_time();
 
             if input.get_key_state(KeyCode::W) == KeyState::Pressed {
                 movement_dir[1] += 1.0;

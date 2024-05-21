@@ -39,14 +39,11 @@ pub mod primitives {
     }
 
     impl<'a> Drawable for LumenBlendObject<'a> {
-        fn draw(
+        fn draw_albedo(
             &self,
             program: &LumenpyxProgram,
             transform: &Transform,
             albedo_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
-            height_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
-            roughness_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
-            normal_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
         ) {
             // construct the blend object and draw it
             let mut blend_object = lumenpyx::blending::BlendObject::new(
@@ -58,14 +55,61 @@ pub mod primitives {
             // this broke it, so as long as no one tries to use the transform directly, which the user can't because it's private, this should be fine
             //blend_object.set_transform(self.transform);
 
-            blend_object.draw(
-                program,
-                transform,
-                albedo_framebuffer,
-                height_framebuffer,
-                roughness_framebuffer,
-                normal_framebuffer,
+            blend_object.draw_albedo(program, transform, albedo_framebuffer);
+        }
+
+        fn draw_height(
+            &self,
+            program: &LumenpyxProgram,
+            transform: &Transform,
+            height_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
+        ) {
+            // construct the blend object and draw it
+            let mut blend_object = lumenpyx::blending::BlendObject::new(
+                &*self.blend_1,
+                &*self.blend_2,
+                self.blend_mode,
             );
+
+            //blend_object.set_transform(self.transform);
+
+            blend_object.draw_height(program, transform, height_framebuffer);
+        }
+
+        fn draw_normal(
+            &self,
+            program: &LumenpyxProgram,
+            transform: &Transform,
+            normal_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
+        ) {
+            // construct the blend object and draw it
+            let mut blend_object = lumenpyx::blending::BlendObject::new(
+                &*self.blend_1,
+                &*self.blend_2,
+                self.blend_mode,
+            );
+
+            //blend_object.set_transform(self.transform);
+
+            blend_object.draw_normal(program, transform, normal_framebuffer);
+        }
+
+        fn draw_roughness(
+            &self,
+            program: &LumenpyxProgram,
+            transform: &Transform,
+            roughness_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
+        ) {
+            // construct the blend object and draw it
+            let mut blend_object = lumenpyx::blending::BlendObject::new(
+                &*self.blend_1,
+                &*self.blend_2,
+                self.blend_mode,
+            );
+
+            //blend_object.set_transform(self.transform);
+
+            blend_object.draw_roughness(program, transform, roughness_framebuffer);
         }
 
         fn set_transform(&mut self, transform: Transform) {
@@ -210,23 +254,44 @@ pub mod primitives {
     }
 
     impl Drawable for Animation {
-        fn draw(
+        fn draw_albedo(
             &self,
             program: &LumenpyxProgram,
             transform: &Transform,
             albedo_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
+        ) {
+            self.lumen_animation
+                .draw_albedo(program, transform, albedo_framebuffer);
+        }
+
+        fn draw_height(
+            &self,
+            program: &LumenpyxProgram,
+            transform: &Transform,
             height_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
-            roughness_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
+        ) {
+            self.lumen_animation
+                .draw_height(program, transform, height_framebuffer);
+        }
+
+        fn draw_normal(
+            &self,
+            program: &LumenpyxProgram,
+            transform: &Transform,
             normal_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
         ) {
-            self.lumen_animation.draw(
-                program,
-                transform,
-                albedo_framebuffer,
-                height_framebuffer,
-                roughness_framebuffer,
-                normal_framebuffer,
-            );
+            self.lumen_animation
+                .draw_normal(program, transform, normal_framebuffer);
+        }
+
+        fn draw_roughness(
+            &self,
+            program: &LumenpyxProgram,
+            transform: &Transform,
+            roughness_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
+        ) {
+            self.lumen_animation
+                .draw_roughness(program, transform, roughness_framebuffer);
         }
 
         fn set_transform(&mut self, transform: Transform) {
@@ -281,22 +346,46 @@ pub mod primitives {
     }
 
     impl Drawable for AnimationStateMachine {
-        fn draw(
+        fn draw_albedo(
             &self,
             program: &LumenpyxProgram,
             transform: &Transform,
             albedo_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
+        ) {
+            self.lumen_animation_state_machine
+                .draw_albedo(program, transform, albedo_framebuffer);
+        }
+
+        fn draw_height(
+            &self,
+            program: &LumenpyxProgram,
+            transform: &Transform,
             height_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
-            roughness_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
+        ) {
+            self.lumen_animation_state_machine
+                .draw_height(program, transform, height_framebuffer);
+        }
+
+        fn draw_normal(
+            &self,
+            program: &LumenpyxProgram,
+            transform: &Transform,
             normal_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
         ) {
-            self.lumen_animation_state_machine.draw(
+            self.lumen_animation_state_machine
+                .draw_normal(program, transform, normal_framebuffer);
+        }
+
+        fn draw_roughness(
+            &self,
+            program: &LumenpyxProgram,
+            transform: &Transform,
+            roughness_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
+        ) {
+            self.lumen_animation_state_machine.draw_roughness(
                 program,
                 transform,
-                albedo_framebuffer,
-                height_framebuffer,
                 roughness_framebuffer,
-                normal_framebuffer,
             );
         }
 
@@ -344,23 +433,44 @@ pub mod primitives {
     }
 
     impl Drawable for Circle {
-        fn draw(
+        fn draw_albedo(
             &self,
             program: &LumenpyxProgram,
             transform: &Transform,
             albedo_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
+        ) {
+            self.lumen_circle
+                .draw_albedo(program, transform, albedo_framebuffer);
+        }
+
+        fn draw_height(
+            &self,
+            program: &LumenpyxProgram,
+            transform: &Transform,
             height_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
-            roughness_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
+        ) {
+            self.lumen_circle
+                .draw_height(program, transform, height_framebuffer);
+        }
+
+        fn draw_normal(
+            &self,
+            program: &LumenpyxProgram,
+            transform: &Transform,
             normal_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
         ) {
-            self.lumen_circle.draw(
-                program,
-                transform,
-                albedo_framebuffer,
-                height_framebuffer,
-                roughness_framebuffer,
-                normal_framebuffer,
-            );
+            self.lumen_circle
+                .draw_normal(program, transform, normal_framebuffer);
+        }
+
+        fn draw_roughness(
+            &self,
+            program: &LumenpyxProgram,
+            transform: &Transform,
+            roughness_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
+        ) {
+            self.lumen_circle
+                .draw_roughness(program, transform, roughness_framebuffer);
         }
 
         fn set_transform(&mut self, transform: Transform) {
@@ -408,23 +518,44 @@ pub mod primitives {
     }
 
     impl Drawable for Rectangle {
-        fn draw(
+        fn draw_albedo(
             &self,
             program: &LumenpyxProgram,
             transform: &Transform,
             albedo_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
+        ) {
+            self.lumen_rectangle
+                .draw_albedo(program, transform, albedo_framebuffer);
+        }
+
+        fn draw_height(
+            &self,
+            program: &LumenpyxProgram,
+            transform: &Transform,
             height_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
-            roughness_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
+        ) {
+            self.lumen_rectangle
+                .draw_height(program, transform, height_framebuffer);
+        }
+
+        fn draw_normal(
+            &self,
+            program: &LumenpyxProgram,
+            transform: &Transform,
             normal_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
         ) {
-            self.lumen_rectangle.draw(
-                program,
-                transform,
-                albedo_framebuffer,
-                height_framebuffer,
-                roughness_framebuffer,
-                normal_framebuffer,
-            );
+            self.lumen_rectangle
+                .draw_normal(program, transform, normal_framebuffer);
+        }
+
+        fn draw_roughness(
+            &self,
+            program: &LumenpyxProgram,
+            transform: &Transform,
+            roughness_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
+        ) {
+            self.lumen_rectangle
+                .draw_roughness(program, transform, roughness_framebuffer);
         }
 
         fn set_transform(&mut self, transform: Transform) {
@@ -495,23 +626,44 @@ pub mod primitives {
     }
 
     impl Drawable for Sprite {
-        fn draw(
+        fn draw_albedo(
             &self,
             program: &LumenpyxProgram,
             transform: &Transform,
             albedo_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
+        ) {
+            self.lumen_sprite
+                .draw_albedo(program, transform, albedo_framebuffer);
+        }
+
+        fn draw_height(
+            &self,
+            program: &LumenpyxProgram,
+            transform: &Transform,
             height_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
-            roughness_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
+        ) {
+            self.lumen_sprite
+                .draw_height(program, transform, height_framebuffer);
+        }
+
+        fn draw_normal(
+            &self,
+            program: &LumenpyxProgram,
+            transform: &Transform,
             normal_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
         ) {
-            self.lumen_sprite.draw(
-                program,
-                transform,
-                albedo_framebuffer,
-                height_framebuffer,
-                roughness_framebuffer,
-                normal_framebuffer,
-            );
+            self.lumen_sprite
+                .draw_normal(program, transform, normal_framebuffer);
+        }
+
+        fn draw_roughness(
+            &self,
+            program: &LumenpyxProgram,
+            transform: &Transform,
+            roughness_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
+        ) {
+            self.lumen_sprite
+                .draw_roughness(program, transform, roughness_framebuffer);
         }
 
         fn set_transform(&mut self, transform: Transform) {
@@ -559,23 +711,44 @@ pub mod primitives {
     }
 
     impl Drawable for Cylinder {
-        fn draw(
+        fn draw_albedo(
             &self,
             program: &LumenpyxProgram,
             transform: &Transform,
             albedo_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
+        ) {
+            self.lumen_cylinder
+                .draw_albedo(program, transform, albedo_framebuffer);
+        }
+
+        fn draw_height(
+            &self,
+            program: &LumenpyxProgram,
+            transform: &Transform,
             height_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
-            roughness_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
+        ) {
+            self.lumen_cylinder
+                .draw_height(program, transform, height_framebuffer);
+        }
+
+        fn draw_normal(
+            &self,
+            program: &LumenpyxProgram,
+            transform: &Transform,
             normal_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
         ) {
-            self.lumen_cylinder.draw(
-                program,
-                transform,
-                albedo_framebuffer,
-                height_framebuffer,
-                roughness_framebuffer,
-                normal_framebuffer,
-            );
+            self.lumen_cylinder
+                .draw_normal(program, transform, normal_framebuffer);
+        }
+
+        fn draw_roughness(
+            &self,
+            program: &LumenpyxProgram,
+            transform: &Transform,
+            roughness_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
+        ) {
+            self.lumen_cylinder
+                .draw_roughness(program, transform, roughness_framebuffer);
         }
 
         fn set_transform(&mut self, transform: Transform) {
@@ -622,23 +795,44 @@ pub mod primitives {
     }
 
     impl Drawable for Sphere {
-        fn draw(
+        fn draw_albedo(
             &self,
             program: &LumenpyxProgram,
             transform: &Transform,
             albedo_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
+        ) {
+            self.lumen_sphere
+                .draw_albedo(program, transform, albedo_framebuffer);
+        }
+
+        fn draw_height(
+            &self,
+            program: &LumenpyxProgram,
+            transform: &Transform,
             height_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
-            roughness_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
+        ) {
+            self.lumen_sphere
+                .draw_height(program, transform, height_framebuffer);
+        }
+
+        fn draw_normal(
+            &self,
+            program: &LumenpyxProgram,
+            transform: &Transform,
             normal_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
         ) {
-            self.lumen_sphere.draw(
-                program,
-                transform,
-                albedo_framebuffer,
-                height_framebuffer,
-                roughness_framebuffer,
-                normal_framebuffer,
-            );
+            self.lumen_sphere
+                .draw_normal(program, transform, normal_framebuffer);
+        }
+
+        fn draw_roughness(
+            &self,
+            program: &LumenpyxProgram,
+            transform: &Transform,
+            roughness_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
+        ) {
+            self.lumen_sphere
+                .draw_roughness(program, transform, roughness_framebuffer);
         }
 
         fn set_transform(&mut self, transform: Transform) {
