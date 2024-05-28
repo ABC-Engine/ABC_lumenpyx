@@ -6,6 +6,7 @@ use ABC_Game_Engine::{EntitiesAndComponents, System};
 use ABC_Game_Engine::{KeyCode, KeyState};
 use ABC_lumenpyx::lights;
 use ABC_lumenpyx::primitives::Circle;
+use ABC_lumenpyx::primitives::TextBox;
 use ABC_lumenpyx::LumenpyxEventLoop;
 use ABC_lumenpyx::LumenpyxProgram;
 use ABC_lumenpyx::{render, Camera};
@@ -93,6 +94,10 @@ fn main() {
         // make a camera, to specify the position we would like to view everything from
         entities_and_components
             .add_entity_with((Camera::new(), ABC_Game_Engine::Transform::default()));
+
+        let lumenpyx_program = entities_and_components
+            .get_resource_mut::<LumenpyxProgram>()
+            .unwrap();
     }
 
     //scene.world.add_system(CameraMovementSystem);

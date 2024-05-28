@@ -8,7 +8,7 @@ use std::ops::{Deref, DerefMut};
 //pub use lumenpyx::*;
 use drawables::lights::{AreaLight, DirectionalLight, PointLight};
 use drawables::primitives::{
-    Animation, AnimationStateMachine, Circle, Cylinder, Rectangle, Sphere, Sprite,
+    Animation, AnimationStateMachine, Circle, Cylinder, Rectangle, Sphere, Sprite, TextBox,
 };
 
 pub use drawables::*;
@@ -27,6 +27,7 @@ pub use lumenpyx::drawable_object::Drawable;
 pub use lumenpyx::lights::LightDrawable;
 pub use lumenpyx::primitives::Normal;
 pub use lumenpyx::primitives::Texture;
+pub use lumenpyx::text::{FontFamily, FontStack, GenericFamily};
 pub use lumenpyx::DebugOption;
 pub use lumenpyx::RenderSettings;
 pub use lumenpyx::TextureHandle;
@@ -501,6 +502,7 @@ fn get_all_drawables_on_object_mut<'a>(
         cylinder,
         animation_state_machine,
         blend_mode,
+        text_box,
         transform,
         children,
     ) = entities_and_components.try_get_components_mut::<(
@@ -512,6 +514,7 @@ fn get_all_drawables_on_object_mut<'a>(
         Cylinder,
         AnimationStateMachine,
         BlendComponent,
+        TextBox,
         ABC_Game_Engine::Transform,
         EntitiesAndComponents,
     )>(entity);
@@ -546,6 +549,10 @@ fn get_all_drawables_on_object_mut<'a>(
         Some(animation_state_machine) => {
             mut_drawables.push(animation_state_machine as &mut dyn Drawable)
         }
+        None => (),
+    }
+    match text_box {
+        Some(text_box) => mut_drawables.push(text_box as &mut dyn Drawable),
         None => (),
     }
 
@@ -664,6 +671,10 @@ fn get_all_entities_with_drawables(entities_and_components: &EntitiesAndComponen
         .get_entities_with_component::<BlendComponent>()
         .cloned()
         .collect::<Vec<Entity>>();
+    let entities_with_text_box = entities_and_components
+        .get_entities_with_component::<TextBox>()
+        .cloned()
+        .collect::<Vec<Entity>>();
 
     // lights are counted as drawables in this case
 
@@ -688,6 +699,7 @@ fn get_all_entities_with_drawables(entities_and_components: &EntitiesAndComponen
     entities.extend(entities_with_cylinder);
     entities.extend(entities_with_animation_state_machine);
     entities.extend(entities_with_blend_component);
+    entities.extend(entities_with_text_box);
     entities.extend(entities_with_point_light);
     entities.extend(entities_with_area_light);
     entities.extend(entities_with_directional_light);

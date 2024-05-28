@@ -16,6 +16,100 @@ pub mod primitives {
 
     use crate::OwnedOrMutableDrawable;
 
+    pub struct TextBox<'a> {
+        lumen_text_box: lumenpyx::text::TextBox<'a>,
+    }
+
+    impl<'a> TextBox<'a> {
+        pub fn new(
+            text: String,
+            display_scale: f32,
+            max_advance: Option<f32>,
+            text_color: [u8; 4],
+            padding: u32,
+            lumenpyx_program: &mut crate::LumenpyxProgram,
+        ) -> Self {
+            Self {
+                lumen_text_box: lumenpyx::text::TextBox::new(
+                    text,
+                    display_scale,
+                    max_advance,
+                    text_color,
+                    padding,
+                    lumenpyx_program,
+                ),
+            }
+        }
+    }
+
+    impl<'a> Deref for TextBox<'a> {
+        type Target = lumenpyx::text::TextBox<'a>;
+
+        fn deref(&self) -> &Self::Target {
+            &self.lumen_text_box
+        }
+    }
+
+    impl<'a> DerefMut for TextBox<'a> {
+        fn deref_mut(&mut self) -> &mut Self::Target {
+            &mut self.lumen_text_box
+        }
+    }
+
+    impl<'a> Drawable for TextBox<'a> {
+        fn draw_albedo(
+            &self,
+            program: &LumenpyxProgram,
+            transform: &Transform,
+            albedo_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
+        ) {
+            self.lumen_text_box
+                .draw_albedo(program, transform, albedo_framebuffer);
+        }
+
+        fn draw_height(
+            &self,
+            program: &LumenpyxProgram,
+            transform: &Transform,
+            height_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
+        ) {
+            self.lumen_text_box
+                .draw_height(program, transform, height_framebuffer);
+        }
+
+        fn draw_normal(
+            &self,
+            program: &LumenpyxProgram,
+            transform: &Transform,
+            normal_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
+        ) {
+            self.lumen_text_box
+                .draw_normal(program, transform, normal_framebuffer);
+        }
+
+        fn draw_roughness(
+            &self,
+            program: &LumenpyxProgram,
+            transform: &Transform,
+            roughness_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
+        ) {
+            self.lumen_text_box
+                .draw_roughness(program, transform, roughness_framebuffer);
+        }
+
+        fn set_transform(&mut self, transform: Transform) {
+            self.lumen_text_box.set_transform(transform);
+        }
+
+        fn try_load_shaders(&self, program: &mut LumenpyxProgram) {
+            self.lumen_text_box.try_load_shaders(program);
+        }
+
+        fn get_transform(&self) -> Transform {
+            *self.lumen_text_box.get_transform()
+        }
+    }
+
     pub(crate) struct LumenBlendObject<'a> {
         blend_1: OwnedOrMutableDrawable<'a>,
         blend_2: OwnedOrMutableDrawable<'a>,
