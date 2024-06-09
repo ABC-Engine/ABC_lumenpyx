@@ -2,6 +2,7 @@
 // All this only does one thing: exclude the transform from the drawable objects so that they can be used in the ECS without confusion
 
 pub mod primitives {
+    use lumenpyx::animation::AnimationTimeElapsed;
     use lumenpyx::drawable_object::Drawable;
     use lumenpyx::lights::LightDrawable;
     use lumenpyx::primitives::Normal;
@@ -13,7 +14,10 @@ pub mod primitives {
     use lumenpyx::Transform;
     use std::ops::Deref;
     use std::ops::DerefMut;
+    use ABC_Game_Engine::DeltaTime;
+    use ABC_Game_Engine::EntitiesAndComponents;
 
+    use crate::LumenpyxProgram as ABCLumenpyxProgram;
     use crate::OwnedOrMutableDrawable;
 
     pub struct TextBox<'a> {
@@ -140,14 +144,11 @@ pub mod primitives {
             albedo_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
         ) {
             // construct the blend object and draw it
-            let mut blend_object = lumenpyx::blending::BlendObject::new(
+            let blend_object = lumenpyx::blending::BlendObject::new(
                 &*self.blend_1,
                 &*self.blend_2,
                 self.blend_mode,
             );
-
-            // this broke it, so as long as no one tries to use the transform directly, which the user can't because it's private, this should be fine
-            //blend_object.set_transform(self.transform);
 
             blend_object.draw_albedo(program, transform, albedo_framebuffer);
         }
@@ -159,13 +160,11 @@ pub mod primitives {
             height_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
         ) {
             // construct the blend object and draw it
-            let mut blend_object = lumenpyx::blending::BlendObject::new(
+            let blend_object = lumenpyx::blending::BlendObject::new(
                 &*self.blend_1,
                 &*self.blend_2,
                 self.blend_mode,
             );
-
-            //blend_object.set_transform(self.transform);
 
             blend_object.draw_height(program, transform, height_framebuffer);
         }
@@ -177,13 +176,11 @@ pub mod primitives {
             normal_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
         ) {
             // construct the blend object and draw it
-            let mut blend_object = lumenpyx::blending::BlendObject::new(
+            let blend_object = lumenpyx::blending::BlendObject::new(
                 &*self.blend_1,
                 &*self.blend_2,
                 self.blend_mode,
             );
-
-            //blend_object.set_transform(self.transform);
 
             blend_object.draw_normal(program, transform, normal_framebuffer);
         }
@@ -195,13 +192,11 @@ pub mod primitives {
             roughness_framebuffer: &mut glium::framebuffer::SimpleFrameBuffer,
         ) {
             // construct the blend object and draw it
-            let mut blend_object = lumenpyx::blending::BlendObject::new(
+            let blend_object = lumenpyx::blending::BlendObject::new(
                 &*self.blend_1,
                 &*self.blend_2,
                 self.blend_mode,
             );
-
-            //blend_object.set_transform(self.transform);
 
             blend_object.draw_roughness(program, transform, roughness_framebuffer);
         }
@@ -236,6 +231,7 @@ pub mod primitives {
     #[derive(Clone)]
     pub struct Animation {
         lumen_animation: lumenpyx::animation::Animation,
+        start_time: f64,
     }
 
     impl Animation {
@@ -246,8 +242,8 @@ pub mod primitives {
             normal: Normal,
             num_frames: usize,
             time_between_frames: std::time::Duration,
-            program: &mut LumenpyxProgram,
             loop_animation: bool,
+            entities_and_components: &mut EntitiesAndComponents,
         ) -> (
             Self,
             Vec<TextureHandle>,
@@ -255,6 +251,15 @@ pub mod primitives {
             Vec<TextureHandle>,
             Vec<TextureHandle>,
         ) {
+            let total_time = entities_and_components
+                .get_resource::<DeltaTime>()
+                .expect("Failed to get DeltaTime resource")
+                .get_total_time();
+
+            let program = entities_and_components
+                .get_resource_mut::<ABCLumenpyxProgram>()
+                .expect("Failed to get LumenpyxProgram resource");
+
             let (anim, albedo, height, roughness, normal) =
                 lumenpyx::animation::Animation::new_from_images(
                     albedo,
@@ -271,6 +276,7 @@ pub mod primitives {
             (
                 Self {
                     lumen_animation: anim,
+                    start_time: total_time,
                 },
                 albedo,
                 height,
@@ -286,8 +292,8 @@ pub mod primitives {
             normal: Normal,
             num_frames: usize,
             time_between_frames: std::time::Duration,
-            program: &mut LumenpyxProgram,
             loop_animation: bool,
+            entities_and_components: &mut EntitiesAndComponents,
         ) -> (
             Self,
             Vec<TextureHandle>,
@@ -295,6 +301,15 @@ pub mod primitives {
             Vec<TextureHandle>,
             Vec<TextureHandle>,
         ) {
+            let total_time = entities_and_components
+                .get_resource::<DeltaTime>()
+                .expect("Failed to get DeltaTime resource")
+                .get_total_time();
+
+            let program = entities_and_components
+                .get_resource_mut::<ABCLumenpyxProgram>()
+                .expect("Failed to get LumenpyxProgram resource");
+
             let (anim, albedo, height, roughness, normal) =
                 lumenpyx::animation::Animation::new_from_spritesheet(
                     albedo,
@@ -311,6 +326,7 @@ pub mod primitives {
             (
                 Self {
                     lumen_animation: anim,
+                    start_time: total_time,
                 },
                 albedo,
                 height,
@@ -325,9 +341,18 @@ pub mod primitives {
             roughness: Vec<TextureHandle>,
             normal: Vec<TextureHandle>,
             time_between_frames: std::time::Duration,
-            program: &mut LumenpyxProgram,
             loop_animation: bool,
+            entities_and_components: &mut EntitiesAndComponents,
         ) -> Self {
+            let total_time = entities_and_components
+                .get_resource::<DeltaTime>()
+                .expect("Failed to get DeltaTime resource")
+                .get_total_time();
+
+            let program = entities_and_components
+                .get_resource_mut::<ABCLumenpyxProgram>()
+                .expect("Failed to get LumenpyxProgram resource");
+
             Self {
                 lumen_animation: lumenpyx::animation::Animation::new_from_handles(
                     albedo,
@@ -339,11 +364,21 @@ pub mod primitives {
                     Transform::default(),
                     loop_animation,
                 ),
+                start_time: total_time,
             }
         }
 
         pub fn restart_animation(&mut self) {
             self.lumen_animation.restart_animation();
+        }
+
+        pub fn set_current_time(&mut self, current_time: AnimationTimeElapsed) {
+            self.lumen_animation.set_time(current_time);
+        }
+
+        pub(crate) fn set_total_time_f64(&mut self, total_time: f64) {
+            self.lumen_animation
+                .set_time(((total_time - self.start_time) as f32).into());
         }
     }
 
@@ -417,10 +452,19 @@ pub mod primitives {
 
     pub struct AnimationStateMachine {
         lumen_animation_state_machine: lumenpyx::animation::AnimationStateMachine,
+        start_time: f64,
     }
 
     impl AnimationStateMachine {
-        pub fn new(animations: Vec<Animation>) -> Self {
+        pub fn new(
+            animations: Vec<Animation>,
+            entities_and_components: &EntitiesAndComponents,
+        ) -> Self {
+            let total_time = entities_and_components
+                .get_resource::<DeltaTime>()
+                .expect("Failed to get DeltaTime resource")
+                .get_total_time();
+
             let mut animations_to_use = Vec::new();
             for animation in animations {
                 animations_to_use.push(animation.lumen_animation);
@@ -430,12 +474,27 @@ pub mod primitives {
                 lumen_animation_state_machine: lumenpyx::animation::AnimationStateMachine::new(
                     animations_to_use,
                 ),
+                start_time: total_time,
             }
         }
 
         pub fn set_current_animation(&mut self, current_animation: usize) {
             self.lumen_animation_state_machine
                 .set_current_animation(current_animation);
+        }
+
+        pub fn set_current_time(&mut self, current_time: AnimationTimeElapsed) {
+            self.lumen_animation_state_machine.set_time(current_time);
+        }
+
+        pub fn set_total_time_f64(&mut self, total_time: f64) {
+            self.lumen_animation_state_machine
+                .set_time(((total_time - self.start_time) as f32).into());
+        }
+
+        pub fn restart_current_animation(&mut self) {
+            self.lumen_animation_state_machine
+                .restart_current_animation();
         }
     }
 

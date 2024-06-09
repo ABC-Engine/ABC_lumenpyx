@@ -14,7 +14,7 @@ use drawables::primitives::{
 pub use drawables::*;
 use lumenpyx::draw_all;
 use lumenpyx::Transform;
-use ABC_Game_Engine::{self, Resource, World};
+use ABC_Game_Engine::{self, DeltaTime, Resource, World};
 use ABC_Game_Engine::{EntitiesAndComponents, Input};
 use ABC_Game_Engine::{Entity, KeyCode};
 
@@ -489,6 +489,7 @@ impl DerefMut for OwnedOrMutableDrawable<'_> {
 fn get_all_drawables_on_object_mut<'a>(
     entities_and_components: &'a mut EntitiesAndComponents,
     entity: Entity,
+    total_time: f64,
 ) -> (
     Vec<OwnedOrMutableDrawable<'a>>,
     Option<&mut ABC_Game_Engine::Transform>,
@@ -573,6 +574,7 @@ fn get_all_drawables_on_object_mut<'a>(
                 vec![],
                 &ABC_Game_Engine::Transform::default(),
                 &mut drawables_in_children,
+                total_time,
             );
 
             // sort the drawables so we can blend the first two
@@ -595,15 +597,15 @@ fn get_all_drawables_on_object_mut<'a>(
                 {
                     let children_ptr = children as *mut EntitiesAndComponents;
                     let children_ref = unsafe { &mut *children_ptr };
-                    (drawables_on_1, transform_1) =
-                        get_all_drawables_on_object_mut(children_ref, drawable_entity_1);
+                    (drawables_on_1, transform_1) = get_all_drawables_on_object_mut(
+                        children_ref,
+                        drawable_entity_1,
+                        total_time,
+                    );
                 }
 
-                let (mut drawables_on_2, transform_2);
-                {
-                    (drawables_on_2, transform_2) =
-                        get_all_drawables_on_object_mut(children, drawable_entity_2);
-                }
+                let (mut drawables_on_2, transform_2) =
+                    get_all_drawables_on_object_mut(children, drawable_entity_2, total_time);
 
                 let mut drawable_1 = drawables_on_1.remove(0);
                 let mut drawable_2 = drawables_on_2.remove(0);
@@ -635,7 +637,12 @@ fn get_all_drawables_on_object_mut<'a>(
     (final_drawables, transform)
 }
 
-fn get_all_entities_with_drawables(entities_and_components: &EntitiesAndComponents) -> Vec<Entity> {
+// gets all the entities that are drawable
+// needs to be mutable to update the animation time
+fn get_all_entities_with_drawables(
+    entities_and_components: &mut EntitiesAndComponents,
+    total_time: f64,
+) -> Vec<Entity> {
     // get all entities with sprite, circle, rectangle, sphere, animation, cylinder then get rid of the duplicates
     let mut entities = vec![];
 
@@ -643,34 +650,55 @@ fn get_all_entities_with_drawables(entities_and_components: &EntitiesAndComponen
         .get_entities_with_component::<Sprite>()
         .cloned()
         .collect::<Vec<Entity>>();
+
     let entities_with_circle = entities_and_components
         .get_entities_with_component::<Circle>()
         .cloned()
         .collect::<Vec<Entity>>();
+
     let entities_with_rectangle = entities_and_components
         .get_entities_with_component::<Rectangle>()
         .cloned()
         .collect::<Vec<Entity>>();
+
     let entities_with_sphere = entities_and_components
         .get_entities_with_component::<Sphere>()
         .cloned()
         .collect::<Vec<Entity>>();
+
     let entities_with_animation = entities_and_components
         .get_entities_with_component::<Animation>()
         .cloned()
         .collect::<Vec<Entity>>();
-    let entities_with_cylinder = entities_and_components
-        .get_entities_with_component::<Cylinder>()
-        .cloned()
-        .collect::<Vec<Entity>>();
+
+    for entity in entities_with_animation.iter() {
+        let (animation,) = entities_and_components.get_components_mut::<(Animation,)>(*entity);
+
+        animation.set_total_time_f64(total_time);
+    }
+
     let entities_with_animation_state_machine = entities_and_components
         .get_entities_with_component::<AnimationStateMachine>()
         .cloned()
         .collect::<Vec<Entity>>();
+
+    for entity in entities_with_animation_state_machine.iter() {
+        let (animation_state_machine,) =
+            entities_and_components.get_components_mut::<(AnimationStateMachine,)>(*entity);
+
+        animation_state_machine.set_total_time_f64(total_time);
+    }
+
+    let entities_with_cylinder = entities_and_components
+        .get_entities_with_component::<Cylinder>()
+        .cloned()
+        .collect::<Vec<Entity>>();
+
     let entities_with_blend_component = entities_and_components
         .get_entities_with_component::<BlendComponent>()
         .cloned()
         .collect::<Vec<Entity>>();
+
     let entities_with_text_box = entities_and_components
         .get_entities_with_component::<TextBox>()
         .cloned()
@@ -682,10 +710,12 @@ fn get_all_entities_with_drawables(entities_and_components: &EntitiesAndComponen
         .get_entities_with_component::<PointLight>()
         .cloned()
         .collect::<Vec<Entity>>();
+
     let entities_with_area_light = entities_and_components
         .get_entities_with_component::<AreaLight>()
         .cloned()
         .collect::<Vec<Entity>>();
+
     let entities_with_directional_light = entities_and_components
         .get_entities_with_component::<DirectionalLight>()
         .cloned()
@@ -718,11 +748,17 @@ fn render_objects(
 ) {
     let mut entity_depth_array = vec![];
 
+    let total_time = entities_and_components
+        .get_resource::<DeltaTime>()
+        .expect("failed to get delta time")
+        .get_total_time();
+
     collect_renderable_entities(
-        &entities_and_components,
+        entities_and_components,
         vec![],
         &ABC_Game_Engine::Transform::default(),
         &mut entity_depth_array,
+        total_time,
     );
 
     entity_depth_array.sort();
@@ -753,7 +789,7 @@ fn render_objects(
         );
 
         let (drawables, transform) =
-            get_all_drawables_on_object_mut(current_entities_and_components, entity);
+            get_all_drawables_on_object_mut(current_entities_and_components, entity, total_time);
         {
             if let Some(_transform) = transform {
                 let transform = &(entity_depth_item.transform);
@@ -781,14 +817,17 @@ fn render_objects(
 }
 
 /// A recursive function that collects all renderable entities in the scene
+/// mutable to update the animation time
 fn collect_renderable_entities(
-    entities_and_components: &EntitiesAndComponents,
+    entities_and_components: &mut EntitiesAndComponents,
     // the list of parent entities to get to the EntitiesAndComponents that is passed, starting with the root
     parent_entities: Vec<Entity>,
     transform_offset: &ABC_Game_Engine::Transform,
     out_list: &mut Vec<EntityDepthItem>,
+    total_time: f64,
 ) {
-    let entities_with_drawables = get_all_entities_with_drawables(entities_and_components);
+    let entities_with_drawables =
+        get_all_entities_with_drawables(entities_and_components, total_time);
 
     for entity in entities_with_drawables {
         let (transform,) =
@@ -811,7 +850,7 @@ fn collect_renderable_entities(
         .collect::<Vec<Entity>>();
 
     for entity in entities_with_children {
-        let (transform, children, blend_comp) = entities_and_components.try_get_components::<(
+        let (transform, children, blend_comp) = entities_and_components.try_get_components_mut::<(
             ABC_Game_Engine::Transform,
             EntitiesAndComponents,
             BlendComponent,
@@ -827,12 +866,19 @@ fn collect_renderable_entities(
                     new_parents,
                     &(transform_offset + transform),
                     out_list,
+                    total_time,
                 )
             }
             (None, Some(children), None) => {
                 let mut new_parents = parent_entities.clone();
                 new_parents.push(entity);
-                collect_renderable_entities(children, new_parents, transform_offset, out_list)
+                collect_renderable_entities(
+                    children,
+                    new_parents,
+                    transform_offset,
+                    out_list,
+                    total_time,
+                )
             }
             _ => (),
         }
