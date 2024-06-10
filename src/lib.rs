@@ -387,6 +387,10 @@ impl Camera {
     }
 }
 
+/// A component that prevents an entity from being rendered
+#[derive(Clone, Copy)]
+pub struct NotActive;
+
 ///  Renders the scene
 pub fn render(scene: &mut EntitiesAndComponents, program: &mut LumenpyxProgram) {
     let camera_entities = scene
@@ -506,6 +510,7 @@ fn get_all_drawables_on_object_mut<'a>(
         text_box,
         transform,
         children,
+        not_active,
     ) = entities_and_components.try_get_components_mut::<(
         Circle,
         Rectangle,
@@ -518,7 +523,12 @@ fn get_all_drawables_on_object_mut<'a>(
         TextBox,
         ABC_Game_Engine::Transform,
         EntitiesAndComponents,
+        NotActive,
     )>(entity);
+
+    if not_active.is_some() {
+        return (vec![], None);
+    }
 
     // this is abhorrent, but I can't think of any better way to do this
     let mut mut_drawables = vec![];
