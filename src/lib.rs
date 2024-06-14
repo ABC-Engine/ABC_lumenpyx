@@ -387,7 +387,7 @@ impl Camera {
     }
 }
 
-/// A component that prevents an entity from being rendered
+/// A component that prevents an entity and it's children from being rendered
 #[derive(Clone, Copy)]
 pub struct NotActive;
 

@@ -368,8 +368,13 @@ pub mod primitives {
             }
         }
 
-        pub fn restart_animation(&mut self) {
+        pub fn restart_animation(&mut self, entities_and_components: &EntitiesAndComponents) {
             self.lumen_animation.restart_animation();
+
+            self.start_time = entities_and_components
+                .get_resource::<DeltaTime>()
+                .expect("Failed to get DeltaTime resource")
+                .get_total_time();
         }
 
         pub fn set_current_time(&mut self, current_time: AnimationTimeElapsed) {
