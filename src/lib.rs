@@ -18,6 +18,7 @@ use ABC_Game_Engine::{self, DeltaTime, Resource, World};
 use ABC_Game_Engine::{EntitiesAndComponents, Input};
 use ABC_Game_Engine::{Entity, KeyCode};
 
+use winit::event::Event::DeviceEvent;
 use winit::event_loop::EventLoop;
 
 // pub use everything from lumenpyx but exclude the things we override in drawables
@@ -115,7 +116,7 @@ impl LumenpyxEventLoop {
     /// run the program with the given update function
     pub fn run<F>(self, world: &mut World, mut update: F)
     where
-        F: FnMut(&mut LumenpyxProgram, &mut World),
+        F: FnMut(&mut World),
     {
         self.event_loop
             .run(move |ev, window_target| match ev {
@@ -131,17 +132,14 @@ impl LumenpyxEventLoop {
                         lumen_program.display.resize(physical_size.into());
                     }
                     winit::event::WindowEvent::RedrawRequested => {
-                        let lumen_program;
+                        let keys_down;
                         {
-                            let lumen_program_ref = world
+                            let lumen_program = world
                                 .entities_and_components
-                                .get_resource_mut::<LumenpyxProgram>()
+                                .get_resource::<LumenpyxProgram>()
                                 .expect("failed to get lumen program");
 
-                            // SAFETY: as long as Input and LumenpyxProgram are unique, this is safe
-                            let lumen_program_ptr = lumen_program_ref as *const LumenpyxProgram;
-                            lumen_program =
-                                unsafe { &mut *(lumen_program_ptr as *mut LumenpyxProgram) };
+                            keys_down = lumen_program.keys_down.clone();
                         }
 
                         {
@@ -151,12 +149,12 @@ impl LumenpyxEventLoop {
                                 .expect("failed to get input system probably a version mismatch");
 
                             input.clear_key_states();
-                            for key in lumen_program.keys_down.iter() {
+                            for key in keys_down.iter() {
                                 input.set_key_down(*key);
                             }
                         }
 
-                        update(lumen_program, world);
+                        update(world);
                     }
                     winit::event::WindowEvent::KeyboardInput { event, .. } => {
                         let lumen_program = world
@@ -189,6 +187,63 @@ impl LumenpyxEventLoop {
                                 // maybe we should log something here, once we have a logger...
                                 // for now, we just ignore it.
                                 winit::keyboard::PhysicalKey::Unidentified(_) => (),
+                            }
+                        }
+                    }
+                    _ => (),
+                },
+                // mouse events
+                DeviceEvent { event, .. } => match event {
+                    winit::event::DeviceEvent::MouseMotion { delta } => {
+                        let input = world
+                            .entities_and_components
+                            .get_resource_mut::<Input>()
+                            .expect("failed to get input system probably a version mismatch");
+
+                        let [old_x, old_y] = input.get_mouse_position();
+
+                        input.set_mouse_position(old_x + delta.0 as f32, old_y + delta.1 as f32);
+                    }
+                    // click events
+                    winit::event::DeviceEvent::Button { button, state } => {
+                        let input = world
+                            .entities_and_components
+                            .get_resource_mut::<Input>()
+                            .expect("failed to get input system probably a version mismatch");
+
+                        input.clear_mouse_states();
+
+                        match button {
+                            // left click
+                            0 => {
+                                if state == winit::event::ElementState::Pressed {
+                                    input.set_mouse_down(ABC_Game_Engine::MouseButton::Left);
+                                }
+                            }
+                            // right click
+                            1 => {
+                                if state == winit::event::ElementState::Pressed {
+                                    input.set_mouse_down(ABC_Game_Engine::MouseButton::Right);
+                                }
+                            }
+                            // middle click
+                            2 => {
+                                if state == winit::event::ElementState::Pressed {
+                                    input.set_mouse_down(ABC_Game_Engine::MouseButton::Middle);
+                                }
+                            }
+                            other => {
+                                let input = world
+                                    .entities_and_components
+                                    .get_resource_mut::<Input>()
+                                    .expect(
+                                        "failed to get input system probably a version mismatch",
+                                    );
+
+                                if state == winit::event::ElementState::Pressed {
+                                    input
+                                        .set_mouse_down(ABC_Game_Engine::MouseButton::Other(other));
+                                }
                             }
                         }
                     }
@@ -392,7 +447,7 @@ impl Camera {
 pub struct NotActive;
 
 ///  Renders the scene
-pub fn render(scene: &mut EntitiesAndComponents, program: &mut LumenpyxProgram) {
+pub fn render(scene: &mut EntitiesAndComponents) {
     let camera_entities = scene
         .get_entities_with_component::<Camera>()
         .cloned()
@@ -423,7 +478,7 @@ pub fn render(scene: &mut EntitiesAndComponents, program: &mut LumenpyxProgram) 
                     camera_transform.z as f32,
                 ];
 
-                render_objects(scene, &camera_component.lumen_camera, program);
+                render_objects(scene, &camera_component.lumen_camera);
                 break;
             }
         }
@@ -751,11 +806,7 @@ fn get_all_entities_with_drawables(
     entities
 }
 
-fn render_objects(
-    entities_and_components: &mut EntitiesAndComponents,
-    camera: &lumenpyx::Camera,
-    lumen_program: &mut LumenpyxProgram,
-) {
+fn render_objects(entities_and_components: &mut EntitiesAndComponents, camera: &lumenpyx::Camera) {
     let mut entity_depth_array = vec![];
 
     let total_time = entities_and_components
@@ -822,6 +873,10 @@ fn render_objects(
     for sprite in &sprites {
         sprite_borrows.push(sprite.deref());
     }
+
+    let lumen_program = entities_and_components
+        .get_resource_mut::<LumenpyxProgram>()
+        .expect("failed to get lumen program");
 
     draw_all(lights_in_scene, sprite_borrows, lumen_program, camera)
 }

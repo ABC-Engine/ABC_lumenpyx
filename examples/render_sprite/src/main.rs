@@ -104,8 +104,8 @@ fn main() {
     scene.world.add_system(CircleMovementSystem);
 
     // this is to run the program for forever or until returned
-    lumen_event_loop.run(&mut scene.world, |program, world| {
+    lumen_event_loop.run(&mut scene.world, |world| {
         world.run();
-        render(&mut world.entities_and_components, program);
+        render(&mut world.entities_and_components);
     });
 }

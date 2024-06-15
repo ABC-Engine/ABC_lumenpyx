@@ -12,7 +12,6 @@ use ABC_lumenpyx::primitives::Circle;
 use ABC_lumenpyx::primitives::Rectangle;
 use ABC_lumenpyx::BlendMode;
 use ABC_lumenpyx::LumenpyxEventLoop;
-use ABC_lumenpyx::LumenpyxProgram;
 use ABC_lumenpyx::{render, Camera};
 
 struct CircleMovementSystem;
@@ -150,8 +149,8 @@ fn main() {
     });
 
     // this is to run the program for forever or until returned
-    lumen_event_loop.run(&mut scene.world, |program, world| {
+    lumen_event_loop.run(&mut scene.world, |world| {
         world.run();
-        render(&mut world.entities_and_components, program);
+        render(&mut world.entities_and_components);
     });
 }
