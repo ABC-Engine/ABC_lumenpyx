@@ -997,3 +997,29 @@ fn abc_transform_to_lumen_transform(transform: ABC_Game_Engine::Transform) -> Tr
     lumen_transform.set_rotation(transform.rotation as f32);
     lumen_transform
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_abc_transform_to_lumen_transform() {
+        let abc_transform = ABC_Game_Engine::Transform {
+            x: 1.0,
+            y: 2.0,
+            z: 3.0,
+            scale: 4.0,
+            rotation: 5.0,
+            origin_x: 0.0,
+            origin_y: 0.0,
+        };
+
+        let lumen_transform = abc_transform_to_lumen_transform(abc_transform);
+
+        assert_eq!(lumen_transform.get_x(), 1.0);
+        assert_eq!(lumen_transform.get_y(), 2.0);
+        assert_eq!(lumen_transform.get_z(), 3.0);
+        assert_eq!(lumen_transform.get_scale(), [4.0, 4.0, 1.0]);
+        assert_eq!(lumen_transform.get_rotation(), 5.0);
+    }
+}
