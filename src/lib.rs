@@ -192,8 +192,9 @@ impl LumenpyxEventLoop {
                     }
                     _ => (),
                 },
+
                 // mouse events
-                DeviceEvent { event, .. } => match event {
+                DeviceEvent { event, device_id } => match event {
                     winit::event::DeviceEvent::MouseMotion { delta } => {
                         let input = world
                             .entities_and_components
@@ -634,13 +635,7 @@ fn get_all_drawables_on_object_mut<'a>(
             let mut drawables_in_children = vec![];
 
             // collect the drawables in the children, this is kinda wasteful if there is more than 2 drawables, but the user should know better
-            collect_renderable_entities(
-                children,
-                vec![],
-                &ABC_Game_Engine::Transform::default(),
-                &mut drawables_in_children,
-                total_time,
-            );
+            collect_renderable_entities(children, &mut drawables_in_children, total_time);
 
             // sort the drawables so we can blend the first two
             drawables_in_children.sort();
@@ -654,8 +649,8 @@ fn get_all_drawables_on_object_mut<'a>(
                     // we can only blend 2 drawables, first 2 will be blended rest will be ignored
                 }
 
-                let drawable_entity_1 = drawables_in_children.remove(0).entity[0];
-                let drawable_entity_2 = drawables_in_children.remove(0).entity[0];
+                let drawable_entity_1 = drawables_in_children.remove(0).entity;
+                let drawable_entity_2 = drawables_in_children.remove(0).entity;
 
                 // SAFETY: we know that the two entities are separate from each other
                 let (mut drawables_on_1, transform_1);
@@ -814,13 +809,7 @@ fn render_objects(entities_and_components: &mut EntitiesAndComponents, camera: &
         .expect("failed to get delta time")
         .get_total_time();
 
-    collect_renderable_entities(
-        entities_and_components,
-        vec![],
-        &ABC_Game_Engine::Transform::default(),
-        &mut entity_depth_array,
-        total_time,
-    );
+    collect_renderable_entities(entities_and_components, &mut entity_depth_array, total_time);
 
     entity_depth_array.sort();
     let mut sprites = vec![];
@@ -829,28 +818,21 @@ fn render_objects(entities_and_components: &mut EntitiesAndComponents, camera: &
     let entities_and_components_ptr = entities_and_components as *mut EntitiesAndComponents;
     // could possibly be done multithreaded and combine layers afterward
     for entity_depth_item in entity_depth_array {
-        let entities = entity_depth_item.entity;
+        let entity = entity_depth_item.entity;
 
         // SAFETY: the only reason this is a problem is because of the sprites vector,
         // which is only used after the loop so there is no double mutable borrow
-        let (current_entities_and_components, entity) =
-            get_entities_and_components_from_entity_list(
-                unsafe { &mut *entities_and_components_ptr },
-                entities,
-            );
+        let entities_and_components = unsafe { &mut *entities_and_components_ptr };
 
-        let current_entities_and_components_ptr =
-            current_entities_and_components as *mut EntitiesAndComponents;
+        let entities_and_components_ptr = entities_and_components as *mut EntitiesAndComponents;
 
         // SAFETY: This is safe as long as we don't use sprites or lights_in scene before the loop ends
         // AND the types of get_all_lights_on_object_mut and get_all_drawables_on_object_mut are non overlapping
-        let (lights, _) = get_all_lights_on_object_mut(
-            unsafe { &mut *current_entities_and_components_ptr },
-            entity,
-        );
+        let (lights, _) =
+            get_all_lights_on_object_mut(unsafe { &mut *entities_and_components_ptr }, entity);
 
         let (drawables, transform) =
-            get_all_drawables_on_object_mut(current_entities_and_components, entity, total_time);
+            get_all_drawables_on_object_mut(entities_and_components, entity, total_time);
         {
             if let Some(_transform) = transform {
                 let transform = &(entity_depth_item.transform);
@@ -885,9 +867,6 @@ fn render_objects(entities_and_components: &mut EntitiesAndComponents, camera: &
 /// mutable to update the animation time
 fn collect_renderable_entities(
     entities_and_components: &mut EntitiesAndComponents,
-    // the list of parent entities to get to the EntitiesAndComponents that is passed, starting with the root
-    parent_entities: Vec<Entity>,
-    transform_offset: &ABC_Game_Engine::Transform,
     out_list: &mut Vec<EntityDepthItem>,
     total_time: f64,
 ) {
@@ -895,97 +874,17 @@ fn collect_renderable_entities(
         get_all_entities_with_drawables(entities_and_components, total_time);
 
     for entity in entities_with_drawables {
-        let (transform,) =
-            entities_and_components.try_get_components::<(ABC_Game_Engine::Transform,)>(entity);
+        let transform = ABC_Game_Engine::get_transform(entity, entities_and_components);
 
-        if let Some(transform) = transform {
-            let mut new_parents = parent_entities.clone();
-            new_parents.push(entity);
-            let new_transform = &*transform + transform_offset;
-            out_list.push(EntityDepthItem {
-                entity: new_parents,
-                transform: new_transform,
-            });
-        }
+        out_list.push(EntityDepthItem { entity, transform });
     }
-
-    let entities_with_children = entities_and_components
-        .get_entities_with_component::<EntitiesAndComponents>()
-        .cloned()
-        .collect::<Vec<Entity>>();
-
-    for entity in entities_with_children {
-        let (transform, children, blend_comp) = entities_and_components.try_get_components_mut::<(
-            ABC_Game_Engine::Transform,
-            EntitiesAndComponents,
-            BlendComponent,
-        )>(entity);
-
-        // if we have a blend component, our children will be part of the blend component, so don't render them here
-        match (transform, children, blend_comp) {
-            (Some(transform), Some(children), None) => {
-                let mut new_parents = parent_entities.clone();
-                new_parents.push(entity);
-                collect_renderable_entities(
-                    children,
-                    new_parents,
-                    &(transform_offset + transform),
-                    out_list,
-                    total_time,
-                )
-            }
-            (None, Some(children), None) => {
-                let mut new_parents = parent_entities.clone();
-                new_parents.push(entity);
-                collect_renderable_entities(
-                    children,
-                    new_parents,
-                    transform_offset,
-                    out_list,
-                    total_time,
-                )
-            }
-            _ => (),
-        }
-    }
-}
-
-/// takes a Vec<Entity> and returns the EntitiesAndComponents and Entity that it points to
-/// takes a specific path in a tree of entities and returns the last entity and the EntitiesAndComponents that it is in
-fn get_entities_and_components_from_entity_list(
-    entities_and_components: &mut EntitiesAndComponents,
-    mut entity_list: Vec<Entity>,
-) -> (&mut EntitiesAndComponents, Entity) {
-    if entity_list.len() == 0 {
-        panic!("entity list is empty, this should never happen, please report this as a bug");
-    }
-    if entity_list.len() == 1 {
-        return (entities_and_components, entity_list[0]);
-    }
-
-    let mut current_entities_and_components = entities_and_components;
-
-    // the last entity in the list is the one we want to return, and it's not a parent so no need to check for children
-    let last_entity = entity_list.pop().unwrap();
-
-    for entity in entity_list {
-        let children = current_entities_and_components
-            .try_get_components_mut::<(EntitiesAndComponents,)>(entity)
-            .0
-            .expect(
-                "failed to get children, this should never happen, please report this as a bug",
-            );
-
-        current_entities_and_components = children;
-    }
-    (current_entities_and_components, last_entity)
 }
 
 struct EntityDepthItem {
     /// ordered by child depth, so entity1 has entity2 as a child which has entity3 as a child
     /// entity1 will not be rendered as part of the pass for this object just entity3.
     /// entity1 and entity 2 will have its own pass
-    entity: Vec<Entity>,
+    entity: Entity,
     transform: ABC_Game_Engine::Transform,
 }
 

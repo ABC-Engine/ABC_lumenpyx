@@ -7,4 +7,5 @@ edition = "2021"
 
 [dependencies]
 ABC_lumenpyx = { path = "../../." }
-ABC_Game_Engine = { git = "https://github.com/ABC-Engine/ABC-Game-Engine" }
+# For now we need to use the local version of ABC_Game_Engine
+ABC_Game_Engine = { path = "../../../ABC-Game-Engine"}

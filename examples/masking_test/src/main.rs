@@ -1,6 +1,7 @@
 use std::time::Instant;
 
 use ABC_Game_Engine::DeltaTime;
+use ABC_Game_Engine::Entity;
 use ABC_Game_Engine::Input;
 use ABC_Game_Engine::Scene;
 use ABC_Game_Engine::Transform;
@@ -14,7 +15,7 @@ use ABC_lumenpyx::BlendMode;
 use ABC_lumenpyx::LumenpyxEventLoop;
 use ABC_lumenpyx::{render, Camera};
 
-struct CircleMovementSystem;
+struct CircleMovementSystem {}
 
 impl System for CircleMovementSystem {
     fn run(&mut self, entities_and_components: &mut EntitiesAndComponents) {
@@ -27,16 +28,16 @@ impl System for CircleMovementSystem {
                 .unwrap()
                 .get_delta_time();
 
-            if input.get_key_state(KeyCode::W) == KeyState::Pressed {
+            if input.get_key_state(KeyCode::W) == KeyState::Held {
                 movement_dir[1] += 1.0;
             }
-            if input.get_key_state(KeyCode::S) == KeyState::Pressed {
+            if input.get_key_state(KeyCode::S) == KeyState::Held {
                 movement_dir[1] += -1.0;
             }
-            if input.get_key_state(KeyCode::A) == KeyState::Pressed {
+            if input.get_key_state(KeyCode::A) == KeyState::Held {
                 movement_dir[0] += -1.0;
             }
-            if input.get_key_state(KeyCode::D) == KeyState::Pressed {
+            if input.get_key_state(KeyCode::D) == KeyState::Held {
                 movement_dir[0] += 1.0;
             }
 
@@ -48,21 +49,13 @@ impl System for CircleMovementSystem {
             }
         }
 
-        let circle_parent_entity = entities_and_components
-            .get_entities_with_component::<EntitiesAndComponents>()
-            .next()
-            .expect("circle parent not found");
-
-        let circle_parent = entities_and_components
-            .get_components_mut::<(EntitiesAndComponents,)>(*circle_parent_entity)
-            .0;
-
-        let circle_entity = circle_parent
+        let circle_entity = entities_and_components
             .get_entities_with_component::<Circle>()
             .next()
             .expect("circle not found");
 
-        let (transform,) = circle_parent.get_components_mut::<(Transform,)>(*circle_entity);
+        let (transform,) =
+            entities_and_components.get_components_mut::<(Transform,)>(*circle_entity);
 
         transform.x += movement_dir[0] * delta_time * 100.0;
         transform.y += movement_dir[1] * delta_time * 100.0;
@@ -70,7 +63,7 @@ impl System for CircleMovementSystem {
         // shouldn't be noticeable, but just to show that rotation isn't doing anything weird
         transform.rotation += delta_time * 100.0;
 
-        //println!("x: {}, y: {}", transform.x, transform.y);
+        println!("x: {}, y: {}", transform.x, transform.y);
     }
 }
 
@@ -118,7 +111,10 @@ fn main() {
             background_transform,
         ));
 
-        let mut children = EntitiesAndComponents::new();
+        let blend_parent = entities_and_components.add_entity_with((
+            BlendComponent::new(BlendMode::Subtractive),
+            ABC_Game_Engine::Transform::default(),
+        ));
 
         let circle_transform = Transform {
             x: 0.0,
@@ -126,17 +122,15 @@ fn main() {
             z: 1.0,
             ..Transform::default()
         };
-        children.add_entity_with((Circle::new([1.0, 1.0, 1.0, 1.0], 5.0), circle_transform));
-        children.add_entity_with((
+
+        let circle_child = entities_and_components
+            .add_entity_with((Circle::new([1.0, 1.0, 1.0, 1.0], 5.0), circle_transform));
+        entities_and_components.set_parent(circle_child, blend_parent);
+        let rect_child = entities_and_components.add_entity_with((
             Rectangle::new([1.0, 1.0, 1.0, 1.0], 128.0, 128.0),
             Transform::default(),
         ));
-
-        entities_and_components.add_entity_with((
-            BlendComponent::new(BlendMode::Subtractive),
-            ABC_Game_Engine::Transform::default(),
-            children,
-        ));
+        entities_and_components.set_parent(rect_child, blend_parent);
 
         // make a camera, to specify the position we would like to view everything from
         entities_and_components

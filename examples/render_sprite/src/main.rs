@@ -39,16 +39,16 @@ impl System for CircleMovementSystem {
                 .unwrap()
                 .get_delta_time();
 
-            if input.get_key_state(KeyCode::W) == KeyState::Pressed {
+            if input.get_key_state(KeyCode::W) == KeyState::Held {
                 movement_dir[1] += 1.0;
             }
-            if input.get_key_state(KeyCode::S) == KeyState::Pressed {
+            if input.get_key_state(KeyCode::S) == KeyState::Held {
                 movement_dir[1] += -1.0;
             }
-            if input.get_key_state(KeyCode::A) == KeyState::Pressed {
+            if input.get_key_state(KeyCode::A) == KeyState::Held {
                 movement_dir[0] += -1.0;
             }
-            if input.get_key_state(KeyCode::D) == KeyState::Pressed {
+            if input.get_key_state(KeyCode::D) == KeyState::Held {
                 movement_dir[0] += 1.0;
             }
 
