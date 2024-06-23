@@ -908,6 +908,9 @@ fn render_objects(entities_and_components: &mut EntitiesAndComponents, camera: &
         {
             if let Some(_) = transform {
                 let transform = &(entity_depth_item.transform);
+                if lights.len() != 0 {
+                    println!("light z: {:?}", transform.z);
+                }
 
                 for mut drawable in drawables {
                     drawable.set_transform(abc_transform_to_lumen_transform(transform.clone()));
@@ -931,6 +934,10 @@ fn render_objects(entities_and_components: &mut EntitiesAndComponents, camera: &
     let lumen_program = entities_and_components
         .get_resource_mut::<LumenpyxProgram>()
         .expect("failed to get lumen program");
+
+    for light in &lights_in_scene {
+        println!("sprite z: {:?}", light.get_transform().get_z());
+    }
 
     draw_all(lights_in_scene, sprite_borrows, lumen_program, camera)
 }
@@ -984,7 +991,8 @@ impl Ord for EntityDepthItem {
 }
 
 fn abc_transform_to_lumen_transform(transform: ABC_Game_Engine::Transform) -> Transform {
-    let mut lumen_transform = Transform::new([transform.x as f32, transform.y as f32, 0.0]);
+    let mut lumen_transform =
+        Transform::new([transform.x as f32, transform.y as f32, transform.z as f32]);
     lumen_transform.set_scale(transform.scale as f32, transform.scale as f32, 1.0);
     lumen_transform.set_rotation(transform.rotation as f32);
     lumen_transform

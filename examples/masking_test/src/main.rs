@@ -8,6 +8,7 @@ use ABC_Game_Engine::Transform;
 use ABC_Game_Engine::{EntitiesAndComponents, System};
 use ABC_Game_Engine::{KeyCode, KeyState};
 use ABC_lumenpyx::lights;
+use ABC_lumenpyx::lights::PointLight;
 use ABC_lumenpyx::primitives::BlendComponent;
 use ABC_lumenpyx::primitives::Circle;
 use ABC_lumenpyx::primitives::Rectangle;
@@ -99,10 +100,21 @@ fn main() {
         .get_resource_mut::<LumenpyxProgram>()
         .unwrap();
 
-    lumenpyx_program.set_render_settings(RenderSettings::default().with_shadows(false));
+    //lumenpyx_program.set_render_settings(RenderSettings::default().with_shadows(false));
 
     {
         let entities_and_components = &mut scene.world.entities_and_components;
+
+        let point_light_transform = Transform {
+            x: 0.0,
+            y: 0.0,
+            z: 10.0,
+            ..Transform::default()
+        };
+        entities_and_components.add_entity_with((
+            PointLight::new([1.0, 1.0, 1.0], 1.0, 0.01),
+            point_light_transform,
+        ));
 
         let background_transform = Transform {
             x: 0.0,
@@ -128,7 +140,7 @@ fn main() {
         };
 
         let circle_child = entities_and_components
-            .add_entity_with((Circle::new([1.0, 1.0, 1.0, 5.0], 5.0), circle_transform));
+            .add_entity_with((Circle::new([1.0, 1.0, 1.0, 1.0], 5.0), circle_transform));
         entities_and_components.set_parent(circle_child, blend_parent);
         let rect_child = entities_and_components.add_entity_with((
             Rectangle::new([1.0, 1.0, 1.0, 1.0], 128.0, 128.0),
@@ -142,9 +154,6 @@ fn main() {
     }
 
     scene.world.add_system(CircleMovementSystem {});
-    scene.world.add_system(SceneMoveSystem {
-        start_time: Instant::now(),
-    });
 
     // the result should be the circle cutting a hole in the white rectangle, making a green circle because the green background will show through
 
