@@ -546,14 +546,157 @@ impl DerefMut for OwnedOrMutableDrawable<'_> {
     }
 }
 
+fn get_blend_object(
+    entities_and_components: &mut EntitiesAndComponents,
+    entity: Entity,
+    total_time: f64,
+) -> Option<Box<LumenBlendObject<'_>>> {
+    let children = entities_and_components.get_children(entity);
+
+    let entities_and_components_ptr = entities_and_components as *mut EntitiesAndComponents;
+
+    // SAFETY: the transform and blend mode are dropped at the end of this block before they are mutably borrowed again
+    let (blend_mode, transform) = unsafe { &mut *entities_and_components_ptr }
+        .try_get_components::<(BlendComponent, ABC_Game_Engine::Transform)>(entity);
+
+    let transform_clone = if let Some(ref transform) = transform {
+        Some(transform)
+    } else {
+        None
+    };
+
+    let mut final_drawable = None;
+
+    match (blend_mode, transform_clone) {
+        (Some(blend_mode), Some(transform)) => {
+            let mut drawables_in_children = vec![];
+
+            // collect the drawables in the children
+            for child in children {
+                // SAFETY: This doesn't intersect with our only other borrow which is of transform and blend mode
+                let (drawables, transform) = get_all_drawables_on_object_mut(
+                    unsafe { &mut *entities_and_components_ptr },
+                    child,
+                    total_time,
+                    true,
+                );
+
+                // only the amount of drawables is checked
+                if drawables.len() != 0 {
+                    drawables_in_children.push(EntityDepthItem {
+                        entity: child,
+                        transform: transform.cloned().unwrap_or_default(),
+                    });
+                    if drawables_in_children.len() >= 2 {
+                        // we only need 2 drawables
+                        break;
+                    }
+                }
+            }
+            // by now all the drawables in the above loop are dropped
+
+            // sort the drawables so we can blend the first two
+            drawables_in_children.sort();
+
+            if drawables_in_children.len() < 2 {
+                // TODO: when we have a logger, log this as a warning
+                // we need at least 2 drawables to blend
+            } else {
+                // this would be a bug in the ecs if this happened but, it would be a huge safety issue so we check
+                assert!(drawables_in_children[0] != drawables_in_children[1]);
+
+                let drawable_entity_1 = drawables_in_children.remove(0).entity;
+                let drawable_entity_2 = drawables_in_children.remove(0).entity;
+
+                // SAFETY: we checked that the entities are different
+                // SAFETY: we also know this is not intersecting with the transform and blend mode borrow
+                let (mut drawables_on_1, transform_1) = get_all_drawables_on_object_mut(
+                    unsafe { &mut *entities_and_components_ptr },
+                    drawable_entity_1,
+                    total_time,
+                    true,
+                );
+
+                // SAFETY: we checked that the entities are different
+                // SAFETY: we also know this is not intersecting with the transform and blend mode borrow
+                let (mut drawables_on_2, transform_2) = get_all_drawables_on_object_mut(
+                    unsafe { &mut *entities_and_components_ptr },
+                    drawable_entity_2,
+                    total_time,
+                    true,
+                );
+
+                let mut drawable_1 = drawables_on_1.remove(0);
+                let mut drawable_2 = drawables_on_2.remove(0);
+
+                // we set the position of the children rather than the parent
+                // it's a bit weird, but i tried the other way and it didn't work so this is fine
+                if let Some(transform_1) = transform_1 {
+                    drawable_1.set_transform(abc_transform_to_lumen_transform(*transform_1));
+                }
+                if let Some(transform_2) = transform_2 {
+                    drawable_2.set_transform(abc_transform_to_lumen_transform(*transform_2));
+                }
+
+                let mut new_blend_obj =
+                    LumenBlendObject::new(drawable_1, drawable_2, blend_mode.lumen_blend_mode);
+
+                new_blend_obj.set_transform(abc_transform_to_lumen_transform(**transform));
+
+                final_drawable = Some(Box::new(new_blend_obj));
+            }
+        }
+        _ => (), // no blend mode or no children
+    }
+
+    final_drawable
+}
+
 fn get_all_drawables_on_object_mut<'a>(
     entities_and_components: &'a mut EntitiesAndComponents,
     entity: Entity,
     total_time: f64,
+    ignore_precheck: bool,
 ) -> (
     Vec<OwnedOrMutableDrawable<'a>>,
     Option<&mut ABC_Game_Engine::Transform>,
 ) {
+    // needs to be benchmarked, but i can't think of a better way to do this...
+    if !ignore_precheck {
+        let mut current_entity = entity;
+        while let Some(parent) = entities_and_components.get_parent(current_entity) {
+            current_entity = parent;
+
+            let not_active = entities_and_components.try_get_component::<NotActive>(current_entity);
+            if not_active.is_some() {
+                return (vec![], None);
+            }
+            let blend_object =
+                get_blend_object(entities_and_components, current_entity, total_time);
+
+            // remember that we are looking at the parent so we don't draw that right now, when the blend object is the original entity it will be drawn
+            if blend_object.is_some() {
+                return (vec![], None);
+            }
+        }
+    }
+
+    let mut final_drawables = vec![];
+
+    let entities_and_components_ptr = entities_and_components as *mut EntitiesAndComponents;
+
+    // SAFETY: this only borrows children (at the end) and the transform and blend mode are dropped at the end of the function
+    // SAFETY: So as long as we don't try to get the children of the entity this is safe
+    let blend_object = get_blend_object(
+        unsafe { &mut *entities_and_components_ptr },
+        entity,
+        total_time,
+    );
+
+    if let Some(blend_object) = blend_object {
+        final_drawables.push(OwnedOrMutableDrawable::Owned(blend_object));
+    }
+
     let (
         circle,
         rectangle,
@@ -562,10 +705,8 @@ fn get_all_drawables_on_object_mut<'a>(
         animation,
         cylinder,
         animation_state_machine,
-        blend_mode,
         text_box,
         transform,
-        children,
         not_active,
     ) = entities_and_components.try_get_components_mut::<(
         Circle,
@@ -575,10 +716,8 @@ fn get_all_drawables_on_object_mut<'a>(
         Animation,
         Cylinder,
         AnimationStateMachine,
-        BlendComponent,
         TextBox,
         ABC_Game_Engine::Transform,
-        EntitiesAndComponents,
         NotActive,
     )>(entity);
 
@@ -621,73 +760,6 @@ fn get_all_drawables_on_object_mut<'a>(
     match text_box {
         Some(text_box) => mut_drawables.push(text_box as &mut dyn Drawable),
         None => (),
-    }
-
-    let transform_clone = if let Some(ref transform) = transform {
-        Some(transform)
-    } else {
-        None
-    };
-
-    let mut final_drawables = vec![];
-    match (blend_mode, children, transform_clone) {
-        (Some(blend_mode), Some(children), Some(transform)) => {
-            let mut drawables_in_children = vec![];
-
-            // collect the drawables in the children, this is kinda wasteful if there is more than 2 drawables, but the user should know better
-            collect_renderable_entities(children, &mut drawables_in_children, total_time);
-
-            // sort the drawables so we can blend the first two
-            drawables_in_children.sort();
-
-            if drawables_in_children.len() < 2 {
-                // TODO: when we have a logger, log this as a warning
-                // we need at least 2 drawables to blend
-            } else {
-                if drawables_in_children.len() > 2 {
-                    // TODO: when we have a logger, log this as a warning
-                    // we can only blend 2 drawables, first 2 will be blended rest will be ignored
-                }
-
-                let drawable_entity_1 = drawables_in_children.remove(0).entity;
-                let drawable_entity_2 = drawables_in_children.remove(0).entity;
-
-                // SAFETY: we know that the two entities are separate from each other
-                let (mut drawables_on_1, transform_1);
-                {
-                    let children_ptr = children as *mut EntitiesAndComponents;
-                    let children_ref = unsafe { &mut *children_ptr };
-                    (drawables_on_1, transform_1) = get_all_drawables_on_object_mut(
-                        children_ref,
-                        drawable_entity_1,
-                        total_time,
-                    );
-                }
-
-                let (mut drawables_on_2, transform_2) =
-                    get_all_drawables_on_object_mut(children, drawable_entity_2, total_time);
-
-                let mut drawable_1 = drawables_on_1.remove(0);
-                let mut drawable_2 = drawables_on_2.remove(0);
-
-                // we set the position of the children rather than the parent
-                // it's a bit weird, but i tried the other way and it didn't work so this is fine
-                if let Some(transform_1) = transform_1 {
-                    drawable_1.set_transform(abc_transform_to_lumen_transform(*transform_1));
-                }
-                if let Some(transform_2) = transform_2 {
-                    drawable_2.set_transform(abc_transform_to_lumen_transform(*transform_2));
-                }
-
-                let mut new_blend_obj =
-                    LumenBlendObject::new(drawable_1, drawable_2, blend_mode.lumen_blend_mode);
-
-                new_blend_obj.set_transform(abc_transform_to_lumen_transform(**transform));
-
-                final_drawables.push(OwnedOrMutableDrawable::Owned(Box::new(new_blend_obj)));
-            }
-        }
-        _ => (), // no blend mode or no children
     }
 
     for drawable in mut_drawables {
@@ -832,9 +904,9 @@ fn render_objects(entities_and_components: &mut EntitiesAndComponents, camera: &
             get_all_lights_on_object_mut(unsafe { &mut *entities_and_components_ptr }, entity);
 
         let (drawables, transform) =
-            get_all_drawables_on_object_mut(entities_and_components, entity, total_time);
+            get_all_drawables_on_object_mut(entities_and_components, entity, total_time, false);
         {
-            if let Some(_transform) = transform {
+            if let Some(_) = transform {
                 let transform = &(entity_depth_item.transform);
 
                 for mut drawable in drawables {
