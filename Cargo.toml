@@ -17,4 +17,5 @@ ABC_Game_Engine = {path = "G:/github_projects/ABC-Game-Engine"}
 
 glium = "0.34.0"
 winit = "0.29.9"
+mouse_position = "0.1.4"
 

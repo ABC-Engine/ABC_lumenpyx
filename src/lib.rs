@@ -14,7 +14,9 @@ use drawables::primitives::{
 pub use drawables::*;
 use lumenpyx::draw_all;
 use lumenpyx::Transform;
-use ABC_Game_Engine::{self, DeltaTime, Resource, World};
+use mouse_position::mouse_position::Mouse;
+use winit::dpi::PhysicalPosition;
+use ABC_Game_Engine::{self, get_transform, DeltaTime, Resource, World};
 use ABC_Game_Engine::{EntitiesAndComponents, Input};
 use ABC_Game_Engine::{Entity, KeyCode};
 
@@ -113,6 +115,18 @@ impl LumenpyxEventLoop {
         lumen_program.internal_program.set_resolution(resolution);
     }
 
+    /// get the resolution of the window
+    /// this is a convenience function for getting the resolution of the window
+    /// returns the resolution as a [u32; 2]
+    pub fn get_resolution(&self, world: &World) -> [u32; 2] {
+        let lumen_program = world
+            .entities_and_components
+            .get_resource::<LumenpyxProgram>()
+            .expect("failed to get lumen program");
+
+        lumen_program.internal_program.get_resolution()
+    }
+
     /// run the program with the given update function
     pub fn run<F>(self, world: &mut World, mut update: F)
     where
@@ -153,6 +167,8 @@ impl LumenpyxEventLoop {
                                 input.set_key_down(*key);
                             }
                         }
+
+                        update_mouse_pos(world);
 
                         update(world);
                     }
@@ -195,16 +211,6 @@ impl LumenpyxEventLoop {
 
                 // mouse events
                 DeviceEvent { event, device_id } => match event {
-                    winit::event::DeviceEvent::MouseMotion { delta } => {
-                        let input = world
-                            .entities_and_components
-                            .get_resource_mut::<Input>()
-                            .expect("failed to get input system probably a version mismatch");
-
-                        let [old_x, old_y] = input.get_mouse_position();
-
-                        input.set_mouse_position(old_x + delta.0 as f32, old_y + delta.1 as f32);
-                    }
                     // click events
                     winit::event::DeviceEvent::Button { button, state } => {
                         let input = world
@@ -263,6 +269,61 @@ impl LumenpyxEventLoop {
                 _ => (),
             })
             .expect("Failed to run event loop");
+    }
+}
+
+fn update_mouse_pos(world: &mut World) {
+    let lumen_program = world
+        .entities_and_components
+        .get_resource::<LumenpyxProgram>()
+        .expect("failed to get lumen program");
+
+    let inner_pos = lumen_program
+        .window
+        .inner_position()
+        .unwrap_or(PhysicalPosition::new(0, 0));
+
+    let inner_size = lumen_program.window.inner_size();
+
+    let mouse_position = Mouse::get_mouse_position();
+
+    match mouse_position {
+        Mouse::Position { x, y } => {
+            let local_x = x - inner_pos.x;
+            let local_y = y - inner_pos.y;
+
+            let mut local_x = local_x as f64 / inner_size.width as f64;
+            let mut local_y = local_y as f64 / inner_size.height as f64;
+
+            local_x = local_x.clamp(0.0, 1.0);
+            local_x -= 0.5;
+            local_y = local_y.clamp(0.0, 1.0);
+            local_y -= 0.5;
+
+            // now we have the local x and y relative to the window
+            // but we need to convert it to the local x and y relative to the world
+            // so we need to get the camera and the camera's position
+
+            let camera_entity = get_camera(&world.entities_and_components)
+                .expect("failed to get camera for mouse position");
+
+            let resolution = lumen_program.get_dimensions();
+
+            local_x = local_x * resolution[0] as f64;
+            local_y = local_y * resolution[1] as f64;
+
+            let camera_transform = get_transform(camera_entity, &world.entities_and_components);
+            local_x += camera_transform.x;
+            local_y += camera_transform.y;
+
+            let input = world
+                .entities_and_components
+                .get_resource_mut::<Input>()
+                .expect("failed to get input system probably a version mismatch");
+
+            input.set_mouse_position(local_x as f32, local_y as f32);
+        }
+        Mouse::Error => {}
     }
 }
 
@@ -447,8 +508,7 @@ impl Camera {
 #[derive(Clone, Copy)]
 pub struct NotActive;
 
-///  Renders the scene
-pub fn render(scene: &mut EntitiesAndComponents) {
+pub fn get_camera(scene: &EntitiesAndComponents) -> Option<Entity> {
     let camera_entities = scene
         .get_entities_with_component::<Camera>()
         .cloned()
@@ -479,11 +539,24 @@ pub fn render(scene: &mut EntitiesAndComponents) {
                     camera_transform.z as f32,
                 ];
 
-                render_objects(scene, &camera_component.lumen_camera);
-                break;
+                return Some(camera_entity);
             }
         }
     }
+
+    None
+}
+
+///  Renders the scene
+pub fn render(scene: &mut EntitiesAndComponents) {
+    let camera_entity = get_camera(scene).expect("failed to get camera");
+
+    let camera_component = scene
+        .try_get_component::<Camera>(camera_entity)
+        .expect("failed to get camera")
+        .clone();
+
+    render_objects(scene, &camera_component.lumen_camera);
 }
 
 fn get_all_lights_on_object_mut(
@@ -634,6 +707,7 @@ fn get_blend_object(
                 if let Some(transform_1) = transform_1 {
                     drawable_1.set_transform(abc_transform_to_lumen_transform(*transform_1));
                 }
+
                 if let Some(transform_2) = transform_2 {
                     drawable_2.set_transform(abc_transform_to_lumen_transform(*transform_2));
                 }
