@@ -309,8 +309,20 @@ fn update_mouse_pos(world: &mut World) {
 
             let resolution = lumen_program.get_dimensions();
 
-            local_x = local_x * resolution[0] as f64;
-            local_y = local_y * resolution[1] as f64;
+            // find the dimension that is cropped
+            let width_ratio = resolution[0] as f64 / inner_size.width as f64;
+            let height_ratio = resolution[1] as f64 / inner_size.height as f64;
+
+            if width_ratio > height_ratio {
+                // we are cropping the height
+                local_y *= width_ratio / height_ratio;
+            } else {
+                // we are cropping the width
+                local_x *= height_ratio / width_ratio;
+            }
+
+            local_x *= resolution[0] as f64;
+            local_y *= resolution[1] as f64;
 
             let camera_transform = get_transform(camera_entity, &world.entities_and_components);
             local_x += camera_transform.x;
