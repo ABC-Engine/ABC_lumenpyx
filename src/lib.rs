@@ -300,7 +300,9 @@ fn update_mouse_pos(world: &mut World) {
     match mouse_position {
         Mouse::Position { x, y } => {
             let local_x = x - inner_pos.x;
-            let local_y = y - inner_pos.y;
+            let mut local_y = y - inner_pos.y;
+            // the y axis is flipped in lumen compared to winit
+            local_y = inner_size.height as i32 - local_y;
 
             let mut local_x = local_x as f64 / inner_size.width as f64;
             let mut local_y = local_y as f64 / inner_size.height as f64;
