@@ -135,6 +135,16 @@ impl LumenpyxEventLoop {
         self.event_loop
             .run(move |ev, window_target| match ev {
                 winit::event::Event::WindowEvent { event, .. } => match event {
+                    winit::event::WindowEvent::Focused(_) => {
+                        let input = world
+                            .entities_and_components
+                            .get_resource_mut::<Input>()
+                            .expect("failed to get input system probably a version mismatch");
+
+                        input.clear_mouse_states();
+
+                        input.clear_key_states();
+                    }
                     winit::event::WindowEvent::CloseRequested => {
                         window_target.exit();
                     }
