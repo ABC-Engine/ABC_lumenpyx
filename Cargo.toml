@@ -1,4 +1,4 @@
-workspace = { members = [ "examples/masking_test", "examples/render_sprite"] }
+workspace = { members = ["examples/masking_test", "examples/render_sprite"] }
 
 [package]
 name = "ABC_lumenpyx"
@@ -10,12 +10,11 @@ edition = "2021"
 [dependencies]
 #lumenpyx = { git = "https://github.com/ABC-Engine/lumenpyx" }
 # REPLACE BEFORE PUBLISHING
-lumenpyx = { path = "G:/github_projects/lumenpyx" }
-#ABC_Game_Engine = { git = "https://github.com/ABC-Engine/ABC-Game-Engine"}
+lumenpyx = { path = "../lumenpyx" }
+#ABC_Game_Engine = { git = "https://github.com/ABC-Engine/ABC-Game-Engine" }
 # REPLACE BEFORE PUBLISHING
-ABC_Game_Engine = {path = "G:/github_projects/ABC-Game-Engine"}
+ABC_Game_Engine = { path = "../ABC-Game-Engine" }
 
 glium = "0.34.0"
 winit = "0.29.9"
 mouse_position = "0.1.4"
-

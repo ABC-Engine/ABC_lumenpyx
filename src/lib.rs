@@ -316,8 +316,8 @@ fn update_mouse_pos(world: &mut World) {
             // but we need to convert it to the local x and y relative to the world
             // so we need to get the camera and the camera's position
 
-            let camera_entity = get_camera(&world.entities_and_components)
-                .expect("failed to get camera for mouse position");
+            let camera_pos = get_camera_pos(&world.entities_and_components)
+                .expect("failed to get camera position");
 
             let resolution = lumen_program.get_dimensions();
 
@@ -336,9 +336,8 @@ fn update_mouse_pos(world: &mut World) {
             local_x *= resolution[0] as f64;
             local_y *= resolution[1] as f64;
 
-            let camera_transform = get_transform(camera_entity, &world.entities_and_components);
-            local_x += camera_transform.x;
-            local_y += camera_transform.y;
+            local_x += camera_pos[0] as f64;
+            local_y += camera_pos[1] as f64;
 
             let input = world
                 .entities_and_components
@@ -532,7 +531,7 @@ impl Camera {
 #[derive(Clone, Copy)]
 pub struct NotActive;
 
-pub fn get_camera(scene: &EntitiesAndComponents) -> Option<Entity> {
+pub fn get_camera_pos(scene: &EntitiesAndComponents) -> Option<[f32; 3]> {
     let camera_entities = scene
         .get_entities_with_component::<Camera>()
         .cloned()
@@ -552,18 +551,15 @@ pub fn get_camera(scene: &EntitiesAndComponents) -> Option<Entity> {
             }
 
             if camera_component.is_active {
-                let camera_transform = scene
-                    .try_get_components::<(ABC_Game_Engine::Transform,)>(camera_entity)
-                    .0
-                    .expect("active camera does not have a transform!");
+                let camera_transform = get_transform(camera_entity, scene);
 
-                camera_component.lumen_camera.position = [
+                let camera_pos = [
                     camera_transform.x as f32,
                     camera_transform.y as f32,
                     camera_transform.z as f32,
                 ];
 
-                return Some(camera_entity);
+                return Some(camera_pos);
             }
         }
     }
@@ -573,14 +569,11 @@ pub fn get_camera(scene: &EntitiesAndComponents) -> Option<Entity> {
 
 ///  Renders the scene
 pub fn render(scene: &mut EntitiesAndComponents) {
-    let camera_entity = get_camera(scene).expect("failed to get camera");
+    let camera_pos = get_camera_pos(scene).expect("renderer could not find an active camera");
 
-    let camera_component = scene
-        .try_get_component::<Camera>(camera_entity)
-        .expect("failed to get camera")
-        .clone();
+    let camera = lumenpyx::Camera::new(camera_pos);
 
-    render_objects(scene, &camera_component.lumen_camera);
+    render_objects(scene, &camera);
 }
 
 fn get_all_lights_on_object_mut(
