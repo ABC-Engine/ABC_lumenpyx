@@ -141,8 +141,9 @@ impl LumenpyxEventLoop {
                             .get_resource_mut::<Input>()
                             .expect("failed to get input system probably a version mismatch");
 
+                        // make sure the keys are cleared when the window is focused
+                        // without this, the keys will be stuck down while the window is not focused
                         input.clear_mouse_states();
-
                         input.clear_key_states();
                     }
                     winit::event::WindowEvent::CloseRequested => {
@@ -181,6 +182,14 @@ impl LumenpyxEventLoop {
                         update_mouse_pos(world);
 
                         update(world);
+
+                        // without this, the wheel will be stuck at the last value
+                        let input = world
+                            .entities_and_components
+                            .get_resource_mut::<Input>()
+                            .expect("failed to get input system probably a version mismatch");
+
+                        input.set_mouse_wheel(0.0);
                     }
                     winit::event::WindowEvent::KeyboardInput { event, .. } => {
                         let lumen_program = world
@@ -261,6 +270,21 @@ impl LumenpyxEventLoop {
                                     input
                                         .set_mouse_down(ABC_Game_Engine::MouseButton::Other(other));
                                 }
+                            }
+                        }
+                    }
+                    winit::event::DeviceEvent::MouseWheel { delta } => {
+                        let input = world
+                            .entities_and_components
+                            .get_resource_mut::<Input>()
+                            .expect("failed to get input system probably a version mismatch");
+
+                        match delta {
+                            winit::event::MouseScrollDelta::LineDelta(x, y) => {
+                                input.set_mouse_wheel(y as f32);
+                            }
+                            winit::event::MouseScrollDelta::PixelDelta(physical_position) => {
+                                input.set_mouse_wheel(physical_position.y as f32);
                             }
                         }
                     }
