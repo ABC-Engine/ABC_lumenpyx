@@ -4,13 +4,17 @@ workspace = { members = ["examples/masking_test", "examples/render_sprite"] }
 name = "ABC_lumenpyx"
 version = "0.1.0"
 edition = "2021"
+description = "The official ABC-Engine integration for the lumenpyx rendering engine."
+license = "MIT"
+keywords = ["graphics", "pixel-art", "lighting", "renderer", "gamedev"]
+authors = ["ABC-Engine", "Ethan Almloff"]
+categories = ["graphics", "game-development", "rendering", "rendering::engine"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-lumenpyx = { git = "https://github.com/ABC-Engine/lumenpyx" }
-ABC_Game_Engine = { git = "https://github.com/ABC-Engine/ABC-Game-Engine" }
-
 glium = "0.34.0"
 winit = "0.29.9"
 mouse_position = "0.1.4"
+lumenpyx = "0.2.2"
+ABC_Game_Engine = "0.1.2"
