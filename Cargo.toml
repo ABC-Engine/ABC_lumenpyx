@@ -8,12 +8,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-#lumenpyx = { git = "https://github.com/ABC-Engine/lumenpyx" }
-# REPLACE BEFORE PUBLISHING
-lumenpyx = { path = "../lumenpyx" }
-#ABC_Game_Engine = { git = "https://github.com/ABC-Engine/ABC-Game-Engine" }
-# REPLACE BEFORE PUBLISHING
-ABC_Game_Engine = { path = "../ABC-Game-Engine" }
+lumenpyx = { git = "https://github.com/ABC-Engine/lumenpyx" }
+ABC_Game_Engine = { git = "https://github.com/ABC-Engine/ABC-Game-Engine" }
 
 glium = "0.34.0"
 winit = "0.29.9"

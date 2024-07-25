@@ -5,6 +5,19 @@ version = 3
 [[package]]
 name = "ABC-ECS"
 version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "eb65073b276c2cc6c3f4a1760ad5ec5b07e802561155c99a1b13b9c3b4123fcb"
+dependencies = [
+ "anymap",
+ "nohash-hasher",
+ "rayon",
+ "rustc-hash",
+ "slotmap",
+]
+
+[[package]]
+name = "ABC-ECS"
+version = "0.2.0"
 source = "git+https://github.com/ABC-Engine/ABC-ECS#2fb76647094b771f296189b139cde5a7d78068d3"
 dependencies = [
  "anymap",
@@ -18,7 +31,23 @@ dependencies = [
 name = "ABC_Game_Engine"
 version = "0.1.0"
 dependencies = [
- "ABC-ECS",
+ "ABC-ECS 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "chrono",
+ "fxhash",
+ "gilrs",
+ "glam",
+ "rand",
+ "rapier2d",
+ "rodio",
+ "tracing",
+]
+
+[[package]]
+name = "ABC_Game_Engine"
+version = "0.1.0"
+source = "git+https://github.com/ABC-Engine/ABC-Game-Engine#bd1c933d0523cf7b9894962396749841b1dad84d"
+dependencies = [
+ "ABC-ECS 0.2.0 (git+https://github.com/ABC-Engine/ABC-ECS)",
  "chrono",
  "fxhash",
  "gilrs",
@@ -33,7 +62,7 @@ dependencies = [
 name = "ABC_lumenpyx"
 version = "0.1.0"
 dependencies = [
- "ABC_Game_Engine",
+ "ABC_Game_Engine 0.1.0 (git+https://github.com/ABC-Engine/ABC-Game-Engine)",
  "glium",
  "lumenpyx",
  "mouse_position",
@@ -1576,6 +1605,7 @@ dependencies = [
 [[package]]
 name = "lumenpyx"
 version = "0.2.1"
+source = "git+https://github.com/ABC-Engine/lumenpyx#640c1a4d81b73bae86c69aeff78b9bdf69dfb96a"
 dependencies = [
  "glium",
  "image",
@@ -1598,7 +1628,7 @@ dependencies = [
 name = "masking_test"
 version = "0.1.0"
 dependencies = [
- "ABC_Game_Engine",
+ "ABC_Game_Engine 0.1.0",
  "ABC_lumenpyx",
 ]
 
@@ -2321,7 +2351,7 @@ checksum = "adad44e29e4c806119491a7f06f03de4d1af22c3a680dd47f1e6e179439d1f56"
 name = "render_sprite"
 version = "0.1.0"
 dependencies = [
- "ABC_Game_Engine",
+ "ABC_Game_Engine 0.1.0",
  "ABC_lumenpyx",
 ]
 
