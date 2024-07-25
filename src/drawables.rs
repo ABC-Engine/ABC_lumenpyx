@@ -4,7 +4,6 @@
 pub mod primitives {
     use lumenpyx::animation::AnimationTimeElapsed;
     use lumenpyx::drawable_object::Drawable;
-    use lumenpyx::lights::LightDrawable;
     use lumenpyx::primitives::Normal;
     use lumenpyx::primitives::NormalInput;
     use lumenpyx::primitives::Texture;

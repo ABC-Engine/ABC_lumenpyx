@@ -36,6 +36,7 @@ pub use lumenpyx::RenderSettings;
 pub use lumenpyx::TextureHandle;
 
 use crate::primitives::{BlendComponent, LumenBlendObject};
+pub mod prelude;
 
 pub struct LumenpyxProgram {
     pub internal_program: lumenpyx::LumenpyxProgram,
