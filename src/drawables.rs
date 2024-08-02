@@ -212,6 +212,16 @@ pub mod primitives {
         fn get_transform(&self) -> Transform {
             self.transform
         }
+
+        fn get_recieve_shadows_strength(&self) -> f32 {
+            if self.blend_1.get_recieve_shadows_strength() != 0.5 {
+                self.blend_1.get_recieve_shadows_strength()
+            } else if self.blend_2.get_recieve_shadows_strength() != 0.5 {
+                self.blend_2.get_recieve_shadows_strength()
+            } else {
+                0.5
+            }
+        }
     }
 
     #[derive(Clone, Copy, Debug)]
@@ -438,6 +448,10 @@ pub mod primitives {
         fn get_transform(&self) -> Transform {
             self.lumen_animation.get_transform()
         }
+
+        fn get_recieve_shadows_strength(&self) -> f32 {
+            self.lumen_animation.get_recieve_shadows_strength()
+        }
     }
 
     impl Deref for Animation {
@@ -557,6 +571,11 @@ pub mod primitives {
         fn get_transform(&self) -> Transform {
             self.lumen_animation_state_machine.get_transform()
         }
+
+        fn get_recieve_shadows_strength(&self) -> f32 {
+            self.lumen_animation_state_machine
+                .get_recieve_shadows_strength()
+        }
     }
 
     impl Deref for AnimationStateMachine {
@@ -640,6 +659,10 @@ pub mod primitives {
 
         fn get_transform(&self) -> Transform {
             self.lumen_circle.get_transform()
+        }
+
+        fn get_recieve_shadows_strength(&self) -> f32 {
+            self.lumen_circle.get_recieve_shadows_strength()
         }
     }
 
@@ -725,6 +748,10 @@ pub mod primitives {
 
         fn get_transform(&self) -> Transform {
             self.lumen_rectangle.get_transform()
+        }
+
+        fn get_recieve_shadows_strength(&self) -> f32 {
+            self.lumen_rectangle.get_recieve_shadows_strength()
         }
     }
 
@@ -834,6 +861,10 @@ pub mod primitives {
         fn get_transform(&self) -> Transform {
             self.lumen_sprite.get_transform()
         }
+
+        fn get_recieve_shadows_strength(&self) -> f32 {
+            self.lumen_sprite.get_recieve_shadows_strength()
+        }
     }
 
     impl Deref for Sprite {
@@ -919,6 +950,10 @@ pub mod primitives {
         fn get_transform(&self) -> Transform {
             self.lumen_cylinder.get_transform()
         }
+
+        fn get_recieve_shadows_strength(&self) -> f32 {
+            self.lumen_cylinder.get_recieve_shadows_strength()
+        }
     }
 
     impl Deref for Cylinder {
@@ -1002,6 +1037,10 @@ pub mod primitives {
 
         fn get_transform(&self) -> Transform {
             self.lumen_sphere.get_transform()
+        }
+
+        fn get_recieve_shadows_strength(&self) -> f32 {
+            self.lumen_sphere.get_recieve_shadows_strength()
         }
     }
 

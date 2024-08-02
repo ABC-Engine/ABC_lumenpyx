@@ -1019,22 +1019,19 @@ fn render_objects(entities_and_components: &mut EntitiesAndComponents, camera: &
         let (lights, _) =
             get_all_lights_on_object_mut(unsafe { &mut *entities_and_components_ptr }, entity);
 
-        let (drawables, transform) =
+        let (drawables, _) =
             get_all_drawables_on_object_mut(entities_and_components, entity, total_time, false);
-        {
-            if let Some(_) = transform {
-                let transform = &(entity_depth_item.transform);
 
-                for mut drawable in drawables {
-                    drawable.set_transform(abc_transform_to_lumen_transform(transform.clone()));
-                    sprites.push(drawable);
-                }
+        let transform = &(entity_depth_item.transform);
 
-                for light in lights {
-                    light.set_transform(abc_transform_to_lumen_transform(transform.clone()));
-                    lights_in_scene.push(&*light);
-                }
-            }
+        for mut drawable in drawables {
+            drawable.set_transform(abc_transform_to_lumen_transform(transform.clone()));
+            sprites.push(drawable);
+        }
+
+        for light in lights {
+            light.set_transform(abc_transform_to_lumen_transform(transform.clone()));
+            lights_in_scene.push(&*light);
         }
     }
 
